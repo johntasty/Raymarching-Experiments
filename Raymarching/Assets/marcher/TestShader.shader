@@ -96,12 +96,14 @@ Shader "Unlit/TestShader"
     half _ShadowPenumbra;
 
 
-
+    //from https://www.iquilezles.org/www/articles/smin/smin.htm
     float sdSphere(float3 eye, float3 center, float s) {
         half d = distance(eye, center) - s;
 
         return d;
     }
+    // polynomial smooth min (k = 0.1);
+    // from https://www.iquilezles.org/www/articles/smin/smin.htm
     float unionSDF(float distA, float distB, float k) {
         float h = max(k - abs(distA - distB), 0.0) / k;
         return min(distA, distB) - h * h * k * (1.0 / 4.0);
@@ -125,7 +127,7 @@ Shader "Unlit/TestShader"
             GetDist(p + e.yyx) - GetDist(p - e.yyx));
         return normalize(n);
     }
-
+    //https://catlikecoding.com/unity/tutorials/scriptable-render-pipeline/lights/ 
     half3 brdf(half3 ro, half3 pos, half3 normal, half3 lightDir, inout half3 col) {
         half percepinalrough = 1.0 - _Smoothness;
         half roughness = percepinalrough * percepinalrough;
@@ -193,7 +195,7 @@ Shader "Unlit/TestShader"
         float3 origin;
         float3 direction;
     };
-
+    //https://github.com/SebLague
     Ray CreateRay(float3 origin, float3 direction) {
         Ray ray;
         ray.origin = origin;
