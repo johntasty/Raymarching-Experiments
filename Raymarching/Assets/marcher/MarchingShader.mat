@@ -14,7 +14,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -26,25 +26,26 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Blend: 0.3
+    - _Blend: 0.03
     - _DinstanceAccuracy: 0.01
-    - _EmmisionSize: 0.2
-    - _Max_Distance: 25
-    - _Max_steps: 100
+    - _EmmisionSize: 0.34
+    - _Max_Distance: 15
+    - _Max_steps: 30
     - _Metallic: 1
-    - _Reflections: 0.66
+    - _Reflections: 1
     - _Roughness: 0.85
     - _ShadowIntensity: 4
     - _ShadowMax: 10
     - _ShadowMin: 0.2
     - _ShadowPenumbra: 1.5
-    - _Size: 1
+    - _Size: 0.2
     - _Smoothness: 0.9
-    - _SpecColorSize: 19
+    - _SpecColorSize: 8
     - _SpecPower: 0.1
     - _SpecPowerPreClamp: 100
+    - numballs: 60
     m_Colors:
-    - _BaseColor: {r: 0.12951222, g: 0.6415094, b: 0.23629239, a: 0.972549}
-    - _EmissionColor: {r: 0.05517976, g: 0.06579882, b: 0.4716981, a: 1}
-    - _SpecColor: {r: 1.5921569, g: 0.30842826, b: 0.33304256, a: 1}
+    - _BaseColor: {r: 0.16509435, g: 0.3932885, b: 0.6603774, a: 0.972549}
+    - _EmissionColor: {r: 0.023529412, g: 2, b: 0, a: 1}
+    - _SpecColor: {r: 0.9245283, g: 0.082858644, b: 0.09844506, a: 1}
   m_BuildTextureStacks: []

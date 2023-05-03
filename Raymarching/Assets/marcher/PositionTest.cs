@@ -8,7 +8,8 @@ public class PositionTest : MonoBehaviour
 
     [SerializeField]
     Material _Material;
-    
+    [SerializeField]
+    int ballsNum;
     [SerializeField]
     Transform[] _Balls;
     [SerializeField]
@@ -30,7 +31,7 @@ public class PositionTest : MonoBehaviour
     private void Start()
     {
 
-        _BallsArray = new Vector4[1];
+        _BallsArray = new Vector4[ballsNum];
         int i = 0;
         foreach (Transform ball in _Balls)
         {
@@ -43,7 +44,7 @@ public class PositionTest : MonoBehaviour
     private void Update()
     {
         if (_Material == null) return;
-        
+
         float forceTime = _Force * Time.deltaTime;
         Vector3 PosTarget = _Target.position;
         for (int i = 0; i < _Balls.Length; i++)
@@ -55,12 +56,12 @@ public class PositionTest : MonoBehaviour
 
             _ball.velocity += SeekForce;
             Vector3 _PosLocal = new Vector3(_ball.position.x, _ball.position.y, _ball.position.z);
-           
+
             _BallsArray[i] = new Vector4(_PosLocal.x, _PosLocal.y, _PosLocal.z, radius);
         }
-              
+
         _Material.SetVectorArray(_BallPosArray, _BallsArray);
-      
+
     }
 
 

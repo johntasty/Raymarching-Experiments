@@ -13,6 +13,7 @@ Shader "Unlit/TestShader"
         [HDR] _EmissionColor("Color", Color) = (0,0,0)
         _Size("_Size", Float) = 1.0
         _Blend("_Blend", Float) = 1.0
+        numballs("Balls", Float) = 1.0
         _Reflections("_Reflections", Range(0.0, 1.0)) = .5
        
        
@@ -77,7 +78,9 @@ Shader "Unlit/TestShader"
     half _SpecColorSize;
     half _EmmisionSize;
     
-    half3 _positions[1];
+    half3 _positions[60];
+   
+    half numballs;
     half3 _Position;
     half4 _BaseColor;
     half4 _SpecColor;
@@ -95,36 +98,84 @@ Shader "Unlit/TestShader"
     half _ShadowIntensity;
     half _ShadowPenumbra;
 
-
-    //from https://www.iquilezles.org/www/articles/smin/smin.htm
-    float sdSphere(float3 eye, float3 center, float s) {
-        half d = distance(eye, center) - s;
-
-        return d;
-    }
     // polynomial smooth min (k = 0.1);
     // from https://www.iquilezles.org/www/articles/smin/smin.htm
     float unionSDF(float distA, float distB, float k) {
         float h = max(k - abs(distA - distB), 0.0) / k;
         return min(distA, distB) - h * h * k * (1.0 / 4.0);
     }
-    float GetDist(float3 eye) {
-        float d = sdSphere(eye, _positions[0], _Size);
+    //from https://www.iquilezles.org/www/articles/smin/smin.htm
+    float sdSphere(float3 eye) {
+        float m = 0.0;
+        float p = 0.0;
+        float dmin = 1e6;
 
-        for (int i = 1; i < _positions.Length; i++)
+        float h = 1.0;
+
+        for (int i = 0; i < numballs; i++)
         {
-            float d2 = sdSphere(eye, _positions[i], _Size);
-            d = unionSDF(d, d2, _Blend);
+            float db = length(_positions[i] - eye);
+          
+            if (db < _Size) {
+                float x = db / _Size;
+                p += 1.0 - x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
+                m += 1.0;
+                h = max(h, .5 * _Size);
+            }
+            else {
+                        
+      
+                dmin = min(dmin, db - _Size);
+            }
+
+           
         }
+        half d = dmin + .1;
+
+        if (m > 0.5) {
+            float th = .1;
+            d = h * (th - p);
+        }
+
         return d;
     }
+   
+    half Sphere(half3 eye, half s) {
+        float db = 0;
+        half dx = 0;
+        half dy = 0;
+        half dz = 0;
+        half r_squared = 0;
+        for (int i = 0; i < numballs; i++)
+        {
+            dx = (eye.x - _positions[i].x);
+            dy = (eye.y - _positions[i].y);
+            dz = (eye.z - _positions[i].z);
+            r_squared = (dx * dx + dy * dy + dz * dz);
+           
+          
+        }
+        if (r_squared < 0.5f)     // same as: if (sqrtf(r_squared) < 0.707f)
+        {
+            db += (0.25 - r_squared + r_squared * r_squared);
+        }
+        return db;
+    }
+    
+    float GetDist(float3 eye) {
+                
+        return length(_positions[0] - eye) - _Size;
+              
+       
+    }
+
     half3 Get_Norm(half3 p)
     {
         half2 e = half2(0.001, 0);
         half3 n = half3(
-            GetDist(p + e.xyy) - GetDist(p - e.xyy),
-            GetDist(p + e.yxy) - GetDist(p - e.yxy),
-            GetDist(p + e.yyx) - GetDist(p - e.yyx));
+            sdSphere(p + e.xyy) - sdSphere(p - e.xyy),
+            sdSphere(p + e.yxy) - sdSphere(p - e.yxy),
+            sdSphere(p + e.yyx) - sdSphere(p - e.yyx));
         return normalize(n);
     }
     //https://catlikecoding.com/unity/tutorials/scriptable-render-pipeline/lights/ 
@@ -156,7 +207,7 @@ Shader "Unlit/TestShader"
         }
         return result;
     }
-    half3 _Shading(half3 p, half3 n, half3 ro, half ds) {
+    half3 _Shading(half3 p, half3 n, half3 ro) {
         Light lights = GetMainLight();
         half3 result;
         half3 color = _BaseColor.rgb;
@@ -212,36 +263,91 @@ Shader "Unlit/TestShader"
         return CreateRay(origin, direction);
     }
 
+    float SphereDistance(float3 ro, float3 rd, float3 center, float radius) {
+
+        float3 oc = ro - center;
+        float b = dot(oc, rd);
+        float c = dot(oc, oc) - radius * radius;
+        float h = b * b - c;
+        if (h < 0.0) return -1.0;
+        return -b - sqrt(h);
+    }
+
+    half when_Greater(half x, half y)
+    {
+        return max(sign(x - y), 0.0);
+    }
+    half when_negative(half x, half y)
+    {
+        return max(sign(y - x), 0.0);
+    }
+    half andOp(half x, half y)
+    {
+        return x * y;
+    }
     half4 raymarch(float3 ro, float3 rd, float depth) {
 
         half4 ret = half4(0, 0, 0, 0);
-        float rayDst = 0; // current distance traveled along ray
-        float3 rOrigin = ro;
-        
-        for (int i = 0; i < _Max_steps; i++)     
-        {
-            float dst = GetDist(rOrigin);
-            half3 pointOnSurface = rOrigin + rd * dst;
-           
-            if (rayDst > _Max_Distance || depth < length(pointOnSurface - ro)) {
-                ret = float4(rd, 0);
-                return ret;
-                break;
-            }
-            if (dst <= _DinstanceAccuracy) {
-               
-                half3 norm = Get_Norm(pointOnSurface);               
-                half3 tes = _Shading(pointOnSurface, norm, rd, dst);
-                ret = float4(tes, _BaseColor.a);
-                return ret;
-                break;
-            }
-           
-            rOrigin += rd * dst;
-            rayDst += dst;
+        //float rayDst = 0; // current distance traveled along ray
+        //float3 rOrigin = ro;
 
-        }        
-        return ret;
+        float t = 0.0;
+
+        float h = _DinstanceAccuracy * 2.0;
+        float m = 1.0;
+        for (uint i = 0; i < _Max_steps; i++)
+        {
+            if (h < _DinstanceAccuracy || t > _Max_Distance) break;
+            t += h;
+            h = sdSphere(ro + rd * t);
+          
+            /*float condition = when_Greater(h, 0.0);
+            float condition2 = when_negative(h, t);*/
+
+            /* t = lerp(t, h, condition * condition2);
+             idx = lerp(idx, float(i), condition * condition2);
+             obj = lerp(obj, sph, condition * condition2);*/
+
+            
+        }
+        half3 position = ro + t * rd;
+        if (t > _Max_Distance) m = -1.0;
+        
+        if (m > -.5 && depth > length(position - ro)) {
+            half3 normal = Get_Norm(position);
+            half3 shade = _Shading(position, normal, rd);
+            ret = half4(shade, 1);
+          
+        }
+        //half3 position = ro + t * rd;
+        
+       
+       /* half3 position = ro + t * rd;
+        half3 normal = normalize(position - obj);
+        half3 shade = _Shading(position, normal, rd);*/
+        return ret; //= lerp(half4(0, 0, 0, 0), half4(shade,1), when_Greater(idx, -0.5));
+        //for (int i = 0; i < _Max_steps; i++)     
+        //{
+        //    float dst = GetDist(rOrigin);
+        //    half3 pointOnSurface = rOrigin + rd * dst;
+        //   
+        //    if (rayDst > _Max_Distance || depth < length(pointOnSurface - ro)) {
+        //        break;
+        //    }
+        //    if (dst <= _DinstanceAccuracy) {
+        //       
+        //        half3 norm = Get_Norm(pointOnSurface);               
+        //        half3 tes = _Shading(pointOnSurface, norm, rd, dst);
+        //        ret = float4(tes, _BaseColor.a);
+        //        return ret;
+        //        break;
+        //    }
+        //   
+        //    rOrigin += rd * dst;
+        //    rayDst += dst;
+
+        //}        
+        //return ret;
     }
 
     v2f vert(appdata v)

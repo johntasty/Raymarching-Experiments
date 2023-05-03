@@ -31,6 +31,7 @@ public class MArchingShader : ScriptableRendererFeature
             sourceRT = new RenderTargetIdentifier(textureID);
         }
              
+
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             var cmd = CommandBufferPool.Get("MyCustomRenderFeature");
