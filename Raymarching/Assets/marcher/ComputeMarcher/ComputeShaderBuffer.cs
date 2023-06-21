@@ -4,10 +4,6 @@ using UnityEngine;
 
 public class ComputeShaderBuffer : MonoBehaviour
 {
-    public float xFloat;
-    public float yFloat;
-    public float zFloat;
-    public float result;
 
     ComputeBuffer bufferShapes;
     [SerializeField]
@@ -15,8 +11,11 @@ public class ComputeShaderBuffer : MonoBehaviour
     [SerializeField]
     int numShapes;
     public static Shape[] testing;
-    Shape[] shapeData;
-
+    Shape shapeData;
+    [SerializeField]
+    GameObject ballPrefab;
+    [SerializeField]
+    Transform ballParent;
     [SerializeField]
     Transform[] _Balls;
     [SerializeField]
@@ -28,33 +27,27 @@ public class ComputeShaderBuffer : MonoBehaviour
 
     struct ShapeData
     {
-        public Vector3 position;
+        public Vector3[] position;
     }
 
     private void Start()
     {
         kernelIndex = _Compute.FindKernel("InvertColors");
-        
 
-        shapeData = new Shape[numShapes];
+        Vector3[] position = new Vector3[numShapes];
+        _Balls = new Transform[numShapes];
         for (int i = 0; i < numShapes; i++)
         {
             Vector3 rand = Random.insideUnitSphere * 3;
-            shapeData[i].position = rand;
+            GameObject ball = Instantiate(ballPrefab, rand, Quaternion.identity,ballParent);
+            _Balls[i] = ball.transform;
+            position[i] = rand;
         }
-        //int i = 0;
-        //foreach (Transform ball in _Balls)
-        //{
-        //    Vector3 rand = Random.insideUnitSphere * 3;
-        //    ball.position += rand;
-        //    shapeData[i].position = new Vector3(ball.position.x, ball.position.y, ball.position.z);
-        //    i++;
-        //}
-        //testing = shapeData;
+       
         bufferShapes = new ComputeBuffer(numShapes, sizeof(float) * 3);
                
         //mComputeShaderKernelID = _Compute.FindKernel("CSMain");
-        bufferShapes.SetData(shapeData);
+        bufferShapes.SetData(position);
         _Compute.SetBuffer(kernelIndex, "shapes", bufferShapes);
        
         
@@ -64,7 +57,7 @@ public class ComputeShaderBuffer : MonoBehaviour
         if (bufferShapes != null)
             bufferShapes.Release();
     }
-       
+
     //private void Update()
     //{
     //    float forceTime = _Force * Time.deltaTime;
@@ -82,6 +75,7 @@ public class ComputeShaderBuffer : MonoBehaviour
 
     //    }
     //    bufferShapes.SetData(shapeData);
+    //    _Compute.SetBuffer(kernelIndex, "shapes", bufferShapes);
     //    //testing = shapeData;
 
     //}

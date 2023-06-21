@@ -13,7 +13,6 @@ public class InvertColorsCompute : ScriptableRendererFeature
         }
         ComputeShader _Compute;
         private int kernelIndex;
-        private int kernelIndexs;
 
         private RenderTargetIdentifier sourceRT;
         private RenderTargetIdentifier DestinationRt;
@@ -25,16 +24,18 @@ public class InvertColorsCompute : ScriptableRendererFeature
         float _Smooth;
         int _MaxSteps;
         float _MaxDist;
+        Vector2 dimensions;
+       
         private ComputeBuffer shapeBuffer;
         private int SizeBuffer;
         float _Radius;
-        public CustomRenderPass(ComputeShader compute, RenderPassEvent Event, int bufferSize, float _Smooths, float Radius,int steps, float distance)
+        public CustomRenderPass(ComputeShader compute, RenderPassEvent Event, int bufferSize, float _Smooths, float Radius,int steps, float distance,int Width, int Height)
         {
             // Set the render pass event
             this.renderPassEvent = Event;
             _Compute = compute;
             kernelIndex = _Compute.FindKernel("InvertColors");
-            kernelIndexs = _Compute.FindKernel("DispatchTest");
+
             textureID = Shader.PropertyToID("Result");
             textureIDdest = Shader.PropertyToID("Destination");
 
@@ -44,6 +45,8 @@ public class InvertColorsCompute : ScriptableRendererFeature
             _Radius = Radius;
             _MaxSteps = steps;
             _MaxDist = distance;
+            dimensions = new Vector2(1f / Width, 1f / Height);
+           
         }
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
@@ -80,11 +83,12 @@ public class InvertColorsCompute : ScriptableRendererFeature
             cmd.SetComputeIntParam(_Compute, "maxSteps", _MaxSteps);
             cmd.SetComputeFloatParam(_Compute, "maxDst", _MaxDist);
 
+
+            cmd.SetComputeVectorParam(_Compute, "dimensions", dimensions);
             cmd.DispatchCompute(_Compute, kernelIndex, Mathf.CeilToInt(renderingData.cameraData.cameraTargetDescriptor.width / 8f), Mathf.CeilToInt(renderingData.cameraData.cameraTargetDescriptor.height / 8f), 1);
-            cmd.DispatchCompute(_Compute, kernelIndexs, Mathf.CeilToInt(renderingData.cameraData.cameraTargetDescriptor.width / 8f), Mathf.CeilToInt(renderingData.cameraData.cameraTargetDescriptor.height / 8f), 1);
-            
+          
             // Blit the temporary render texture back to the camera's render texture.
-            cmd.Blit(DestinationRt, renderingData.cameraData.renderer.cameraColorTarget);
+            cmd.Blit(sourceRT, renderingData.cameraData.renderer.cameraColorTarget);
            
 
             context.ExecuteCommandBuffer(cmd);            
@@ -118,10 +122,14 @@ public class InvertColorsCompute : ScriptableRendererFeature
     int _MaxSteps;
     [SerializeField]
     float _MaxDist;
+    [SerializeField]
+    int width;
+    [SerializeField]
+    int height;
     /// <inheritdoc/>
     public override void Create()
     {
-        m_ScriptablePass = new CustomRenderPass(_ComputeShader, Event, _BufferNum, _Smooth, _Radius, _MaxSteps, _MaxDist);
+        m_ScriptablePass = new CustomRenderPass(_ComputeShader, Event, _BufferNum, _Smooth, _Radius, _MaxSteps, _MaxDist, width, height);
       
     }
 

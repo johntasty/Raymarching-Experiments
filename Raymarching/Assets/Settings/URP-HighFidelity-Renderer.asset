@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-3357379120524766903
+--- !u!114 &-7365011376188680513
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9,12 +9,36 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 75a8d96ebfa36e74987d87cede9929dc, type: 3}
-  m_Name: MArchingShader
+  m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
+  m_Name: RenderObjects
   m_EditorClassIdentifier: 
   m_Active: 1
-  Event: 550
-  _Material: {fileID: 2100000, guid: f29555b30ed89f541bcec8cbd51baff1, type: 2}
+  settings:
+    passTag: RenderObjects
+    Event: 300
+    filterSettings:
+      RenderQueueType: 0
+      LayerMask:
+        serializedVersion: 2
+        m_Bits: 64
+      PassNames: []
+    overrideMaterial: {fileID: 0}
+    overrideMaterialPassIndex: 0
+    overrideDepthState: 0
+    depthCompareFunction: 4
+    enableWrite: 1
+    stencilSettings:
+      overrideStencilState: 1
+      stencilReference: 0
+      stencilCompareFunction: 3
+      passOperation: 0
+      failOperation: 0
+      zFailOperation: 0
+    cameraSettings:
+      overrideCamera: 0
+      restoreCamera: 1
+      offset: {x: 0.55, y: 0, z: 0, w: 1}
+      cameraFieldOfView: 37.2
 --- !u!114 &-1878332245247344467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27,7 +51,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
   m_Name: SSAO
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   m_Shader: {fileID: 4800000, guid: 0849e84e3d62649e8882e9d6f056a017, type: 3}
   m_Settings:
     Downsample: 0
@@ -55,8 +79,9 @@ MonoBehaviour:
       type: 3}
   m_RendererFeatures:
   - {fileID: -1878332245247344467}
-  - {fileID: -3357379120524766903}
-  m_RendererFeatureMap: adc0de57c6d2eee549d1ce607a3168d1
+  - {fileID: 7989570109024300121}
+  - {fileID: -7365011376188680513}
+  m_RendererFeatureMap: adc0de57c6d2eee559ec7800afa7e06ebf1690c32c39ca99
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -78,10 +103,10 @@ MonoBehaviour:
   m_AssetVersion: 1
   m_OpaqueLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 183
   m_TransparentLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 183
   m_DefaultStencilState:
     overrideStencilState: 0
     stencilReference: 0
@@ -96,3 +121,25 @@ MonoBehaviour:
   m_ClusteredRendering: 0
   m_TileSize: 32
   m_IntermediateTextureMode: 1
+--- !u!114 &7989570109024300121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc4f71bde6cd81647a6140c2e8bafd10, type: 3}
+  m_Name: InvertColorsCompute
+  m_EditorClassIdentifier: 
+  m_Active: 0
+  _ComputeShader: {fileID: 7200000, guid: 1c4813aa4cfb8e5429aafa1f0c8285a5, type: 3}
+  Event: 550
+  _BufferNum: 1000
+  _Smooth: 0
+  _Radius: 0.3
+  _MaxSteps: 25
+  _MaxDist: 15
+  width: 1920
+  height: 1080

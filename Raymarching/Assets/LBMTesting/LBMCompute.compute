@@ -1,0 +1,372 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#pragma kernel Stream
+#pragma kernel PaintPixels
+#pragma kernel Tracers
+
+
+#define four9ths 0.44444
+#define one9th   0.11111
+#define one36th  0.02777
+
+#define VEL 0.12
+// Definition of D2Q9 lattice
+    /*
+    6   2   5
+      \ | /
+    3 - 0 - 1
+      / | \
+    7   4   8
+    */
+// Define a constant array
+// LBM variables
+
+RWTexture2D<float4> Result;
+RWTexture2D<float4> Velocities;
+RWTexture2D<float4> InputTexture;
+
+int gridSize;
+
+struct PixelData {
+
+    float n0;
+    float northE;
+    float northW;
+    float northN;
+    float northS;
+    float northNE;
+    float northNW;
+    float northSE;
+    float northSW;
+};
+RWStructuredBuffer<PixelData> gridBuffer;
+
+//float ux0;
+float omegaf;
+float viscosity;
+
+float _RelaxationTime;
+float _Time;
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    //relaxation time
+    float Relaxation = _RelaxationTime;
+
+    int height, width;
+    Result.GetDimensions(width, height);
+
+    // Access the grid square in the buffer
+    int index = id.y * width + id.x;   
+    PixelData gridSquare = gridBuffer[index];
+
+    //pixel vars
+    float rho, xVel, yVel; 
+
+    rho = 1.;
+    xVel = VEL; //* (1. + .1 * id.y / height);
+    yVel = 0.;
+       
+    float ux3 = 3 * xVel;
+    float uy3 = 3 * yVel;
+    float ux2 = xVel * xVel;
+    float uy2 = yVel * yVel;
+
+    float uxuy2 = 2 * xVel * yVel;
+    float u2 = ux2 + uy2;
+    float u215 = 1.5 * u2;
+    
+    gridSquare.n0 = four9ths * rho * (1 - u215);
+    gridSquare.northE = one9th * rho * (1 + ux3 + 4.5 * ux2 - u215);
+    gridSquare.northW = one9th * rho * (1 - ux3 + 4.5 * ux2 - u215);
+    gridSquare.northN = one9th * rho * (1 + uy3 + 4.5 * uy2 - u215);
+    gridSquare.northS = one9th * rho * (1 - uy3 + 4.5 * uy2 - u215);
+
+    gridSquare.northNE = one36th * rho * (1 + ux3 + uy3 + 4.5 * (u2 + uxuy2) - u215);
+    gridSquare.northSE = one36th * rho * (1 + ux3 - uy3 + 4.5 * (u2 - uxuy2) - u215);
+    gridSquare.northNW = one36th * rho * (1 - ux3 + uy3 + 4.5 * (u2 - uxuy2) - u215);
+    gridSquare.northSW = one36th * rho * (1 - ux3 - uy3 + 4.5 * (u2 + uxuy2) - u215);
+    gridBuffer[index] = gridSquare;
+
+    Result[id.xy] = float4(xVel, yVel, rho, Relaxation);
+    Velocities[id.xy] = float4(xVel, yVel, rho, Relaxation);
+}
+
+
+[numthreads(8, 8, 1)]
+void Stream(uint3 id : SV_DispatchThreadID)
+{
+    int height, width;
+    Result.GetDimensions(width, height);
+    int xDim = id.x;
+    int yDim = id.y;
+
+    float4 color = InputTexture[id.xy];
+    float normalizedGrayscale = color.r;
+    // Get the index of the current grid square
+    int CurrentCell = id.y * width + id.x;
+    // Access the grid square in the buffer
+    PixelData gridSquare = gridBuffer[CurrentCell];
+    //===Collision Step===    
+    float rho, xVel, yVel, relaxation, viscos;
+    relaxation = _RelaxationTime;
+    viscos = viscosity;
+    for (int i = 0; i < 4; i++)
+    {
+        rho = gridSquare.n0 + gridSquare.northN + gridSquare.northS + gridSquare.northE +
+            gridSquare.northW + gridSquare.northNW + gridSquare.northNE + gridSquare.northSW + gridSquare.northSE;
+
+        //velocity
+        xVel = (gridSquare.northE + gridSquare.northNE + gridSquare.northSE -
+            gridSquare.northW - gridSquare.northNW - gridSquare.northSW) / rho;
+
+        yVel = (gridSquare.northN + gridSquare.northNE + gridSquare.northNW -
+            gridSquare.northS - gridSquare.northSE - gridSquare.northSW) / rho;
+
+        //velocity cap for stability
+        float norm = sqrt(xVel * xVel + yVel * yVel);
+        if (norm > 0.2)
+        {
+            xVel *= 0.2 / norm;
+            yVel *= 0.2 / norm;
+        }
+
+        //dencities
+        float one9thRho = one9th * rho;
+        float one36thRho = one36th * rho;
+
+        //velocities 
+        float ux3 = 3 * xVel;
+        float uy3 = 3 * yVel;
+        float ux2 = xVel * xVel;
+        float uy2 = yVel * yVel;
+
+        float uxuy2 = 2 * xVel * yVel;
+        float u2 = ux2 + uy2;
+        float u215 = 1 - 1.5 * u2;
+        float uxuy = xVel * yVel;
+        float omega = 1 / (relaxation * viscos + .5);		// reciprocal of relaxation time
+
+        gridSquare.n0 = (1 - omega) * gridSquare.n0 + omega * four9ths * rho * u215;
+        gridSquare.northE = (1 - omega) * gridSquare.northE + omega * one9th * rho * (u215 + 3 * xVel + 4.5 * ux2);
+        gridSquare.northW = (1 - omega) * gridSquare.northW + omega * one9th * rho * (u215 - 3 * xVel + 4.5 * ux2);
+        gridSquare.northN = (1 - omega) * gridSquare.northN + omega * one9th * rho * (u215 + 3 * yVel + 4.5 * uy2);
+        gridSquare.northS = (1 - omega) * gridSquare.northS + omega * one9th * rho * (u215 - 3 * yVel + 4.5 * uy2);
+        gridSquare.northNE = (1 - omega) * gridSquare.northNE + omega * one36th * rho * (u215 + 3 * (xVel + yVel) + 4.5 * (u2 + 2 * uxuy));
+        gridSquare.northSE = (1 - omega) * gridSquare.northSE + omega * one36th * rho * (u215 + 3 * (xVel - yVel) + 4.5 * (u2 - 2 * uxuy));
+        gridSquare.northNW = (1 - omega) * gridSquare.northNW + omega * one36th * rho * (u215 + 3 * (-xVel + yVel) + 4.5 * (u2 - 2 * uxuy));
+        gridSquare.northSW = (1 - omega) * gridSquare.northSW + omega * one36th * rho * (u215 + 3 * (-xVel - yVel) + 4.5 * (u2 + 2 * uxuy));
+        //add data back
+        gridBuffer[CurrentCell] = gridSquare;
+
+
+        //=== STREAMING STEP =======================
+        int xplus = ((id.x == width - 1) ? (0) : (id.x + 1));
+        int xminus = ((id.x == 0) ? (width - 1) : (id.x - 1));
+        int yplus = ((id.y == height - 1) ? (0) : (id.y + 1));
+        int yminus = ((id.y == 0) ? (height - 1) : (id.y - 1));
+        //grab neighbors
+        int NeighborRight = id.y * width + xplus;
+        int NeighborLeft = id.y * width + xminus;
+        int NeighborUp = yplus * width + id.x;
+        int NeighborDown = yminus * width + id.x;
+        int NeighborUpRight = yplus * width + xplus;
+        int NeighborUpLeft = yplus * width + xminus;
+        int NeighborDownRight = yminus * width + xplus;
+        int NeighborDownLeft = yminus * width + xminus;
+
+        PixelData NeighBorUp = gridBuffer[NeighborUp];
+        PixelData NeighBorDow = gridBuffer[NeighborDown];
+        PixelData NeighBorRight = gridBuffer[NeighborRight];
+        PixelData NeighBorLeft = gridBuffer[NeighborLeft];
+
+        PixelData NeighBorUpRight = gridBuffer[NeighborUpRight];
+        PixelData NeighBorUpLeft = gridBuffer[NeighborUpLeft];
+        PixelData NeighBorDownLeft = gridBuffer[NeighborDownLeft];
+        PixelData NeighBorDowRi = gridBuffer[NeighborDownRight];
+
+
+        //stream directions
+        gridSquare.northN = NeighBorDow.northN;
+        gridSquare.northNW = NeighBorDowRi.northNW;
+
+        gridSquare.northE = NeighBorLeft.northE;
+        gridSquare.northNE = NeighBorDownLeft.northNE;
+
+        gridSquare.northS = NeighBorUp.northS;
+        gridSquare.northSE = NeighBorUpLeft.northSE;
+
+        gridSquare.northW = NeighBorRight.northW;
+        gridSquare.northSW = NeighBorUpRight.northSW;
+
+        gridBuffer[CurrentCell] = gridSquare;
+
+        //rightmost bounce back
+        if (id.x == width) {
+            gridSquare.northW = NeighBorLeft.northW;
+            gridSquare.northNW = NeighBorLeft.northNW;
+            gridSquare.northSW = NeighBorLeft.northSW;
+
+            gridBuffer[CurrentCell] = gridSquare;
+        }
+        if (id.x == 0)//flow from the left
+        {
+            gridSquare.northE = one9th * (1 + 3 * VEL + 3 * VEL * VEL);
+
+            gridSquare.northNE = one36th * (1 + 3 * VEL + 3 * VEL * VEL);
+            gridSquare.northSE = one36th * (1 + 3 * VEL + 3 * VEL * VEL);
+            gridBuffer[CurrentCell] = gridSquare;
+
+        }
+
+        //bounce 
+        if (normalizedGrayscale > .01) {
+
+            NeighBorRight.northE = gridSquare.northW;
+            NeighBorLeft.northW = gridSquare.northE;
+            NeighBorUp.northN = gridSquare.northS;
+            NeighBorDow.northS = gridSquare.northN;
+
+            NeighBorUpRight.northNE = gridSquare.northSW;
+            NeighBorUpLeft.northNW = gridSquare.northSE;
+            NeighBorDowRi.northSE = gridSquare.northNW;
+            NeighBorDownLeft.northSW = gridSquare.northNE;
+
+            gridBuffer[NeighborUp] = NeighBorUp;
+            gridBuffer[NeighborDown] = NeighBorDow;
+            gridBuffer[NeighborRight] = NeighBorRight;
+            gridBuffer[NeighborLeft] = NeighBorLeft;
+
+            gridBuffer[NeighborUpRight] = NeighBorUpRight;
+            gridBuffer[NeighborUpLeft] = NeighBorUpLeft;
+            gridBuffer[NeighborDownLeft] = NeighBorDownLeft;
+            gridBuffer[NeighborDownRight] = NeighBorDowRi;
+
+        }
+    }
+    
+     Velocities[id.xy] = float4(xVel, yVel, 1., 1.);
+    if (normalizedGrayscale > .01) {
+        float4 res = float4(xVel, yVel, 0, 1.0);
+        Result[id.xy] = res;       
+    }
+    else {
+        float normal_value = sqrt(xVel * xVel + yVel * yVel);
+        normal_value = normal_value / 0.2;
+        float3 color;
+        if (normal_value < 0.0) normal_value = 0.0;
+        if (normal_value > 1.0) normal_value = 1.0;
+        float v1 = 1.0 / 7.0;
+        float v2 = 2.0 / 7.0;
+        float v3 = 3.0 / 7.0;
+        float v4 = 4.0 / 7.0;
+        float v5 = 5.0 / 7.0;
+        float v6 = 6.0 / 7.0;
+        //compute color
+        if (normal_value < v1)
+        {
+            float c = normal_value / v1;
+            color.x = 70. * (1. - c);
+            color.y = 70. * (1. - c);
+            color.z = 219. * (1. - c) + 91. * c;
+        }
+        else if (normal_value < v2)
+        {
+            float c = (normal_value - v1) / (v2 - v1);
+            color.x = 0.;
+            color.y = 255. * c;
+            color.z = 91. * (1. - c) + 255. * c;
+        }
+        else if (normal_value < v3)
+        {
+            float c = (normal_value - v2) / (v3 - v2);
+            color.x = 0. * c;
+            color.y = 255. * (1. - c) + 128. * c;
+            color.z = 255. * (1. - c) + 0. * c;
+        }
+        else if (normal_value < v4)
+        {
+            float c = (normal_value - v3) / (v4 - v3);
+            color.x = 255. * c;
+            color.y = 128. * (1. - c) + 255. * c;
+            color.z = 0.;
+        }
+        else if (normal_value < v5)
+        {
+            float c = (normal_value - v4) / (v5 - v4);
+            color.x = 255. * (1. - c) + 255. * c;
+            color.y = 255. * (1. - c) + 96. * c;
+            color.z = 0.;
+        }
+        else if (normal_value < v6)
+        {
+            float c = (normal_value - v5) / (v6 - v5);
+            color.x = 255. * (1. - c) + 107. * c;
+            color.y = 96. * (1. - c);
+            color.z = 0.;
+        }
+        else
+        {
+            float c = (normal_value - v6) / (1. - v6);
+            color.x = 107. * (1. - c) + 223. * c;
+            color.y = 77. * c;
+            color.z = 77. * c;
+        }
+        float contrast = .6;
+        float4 res = float4((color.r / 255) * contrast,(color.g / 255) * contrast, (color.b/255) * contrast, 1.0);
+        //float4 res = float4(xVel * 5 + 0.5f, yVel * 5 + 0.5f, 0, 1.0);
+        Result[id.xy] = res;
+        
+    }
+   
+}
+float2 MouseUV;
+float4 ColorPaint;
+[numthreads(8, 8, 1)]
+void PaintPixels(uint3 id : SV_DispatchThreadID)
+{
+    // Get the pixel position
+    uint2 pixelPos = uint2(id.xy);
+   
+    float distance = length(pixelPos - MouseUV);
+
+    // Check if the pixel is within the circle radius
+    if (distance <= 10)
+    {
+        // Modify the color of the pixel
+        InputTexture[pixelPos] = ColorPaint;
+    }
+}
+
+struct VelocityData {
+    float posX;
+    float posY;
+};
+RWStructuredBuffer<VelocityData> VelocitiesBuffer;
+
+[numthreads(8, 8, 1)]
+void Tracers(uint3 id : SV_DispatchThreadID)
+{
+    uint2 pixelPos = uint2(id.xy);
+  
+    float dist = 10;
+    if (id.x == 0) {
+
+        VelocityData particle = VelocitiesBuffer[id.y];
+
+        float2 pos = float2(particle.posX, particle.posY);
+        float2 vel = Velocities[pos].rg;
+
+        pos += vel;
+        if (pos.x > 512) pos.x = 0;
+        if (pos.y > 512) pos.y = 0;
+        if (pos.y < 0) pos.y = 512 - 1;
+
+        VelocitiesBuffer[id.y].posX = pos.x;
+        VelocitiesBuffer[id.y].posY = pos.y;
+
+
+        Result[pos] = float4(1, 1, 1, 1);
+    }
+    
+}
