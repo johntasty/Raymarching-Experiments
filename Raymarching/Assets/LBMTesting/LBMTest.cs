@@ -6,8 +6,7 @@ public class LBMTest : MonoBehaviour
     [SerializeField]
     Terrain _TerrainObject;
     TerrainData _terrain;
-    [SerializeField]
-    Texture2D obstacles;
+
     [SerializeField]
     Material fluidMat;
     [SerializeField]
@@ -21,19 +20,14 @@ public class LBMTest : MonoBehaviour
     private RenderTexture tempTexture;
     private RenderTexture VelocityTexture;
 
-    public Camera cam;
-    // Fluid parameters
-    public int width = 100; // Width of the fluid domain
-    public int height = 100; // Height of the fluid domain
-    public float density0 = 1f; // Initial density
+    
     public float viscosity = 0.05f; // Kinematic viscosity
     public float relaxationTime = 0.5f; // Relaxation time
     public float _VelocityCap;
     public float _Contrast;
     public float amplitude;
 
-
-    public float _Reynolds = 80;
+    //Terrain heightMap texture size
     public int _Height;
     public int _Width;
 
@@ -59,10 +53,9 @@ public class LBMTest : MonoBehaviour
     };
     public VelocityData[] positionsData;
 
-    int kernelHandle;
-   
+    //Kernels
+    int kernelHandle;   
     int Stream;
-    int PaintPixels;
     int Tracers;
     private void SetTerrain()
     {        
@@ -75,7 +68,7 @@ public class LBMTest : MonoBehaviour
        
         kernelHandle = LBMCompute.FindKernel("CSMain");        
         Stream = LBMCompute.FindKernel("Stream");
-        PaintPixels = LBMCompute.FindKernel("PaintPixels");
+       
         Tracers = LBMCompute.FindKernel("Tracers");
         _terrain = _TerrainObject.terrainData;
         
@@ -105,14 +98,10 @@ public class LBMTest : MonoBehaviour
 
         LBMCompute.SetTexture(Stream, "InputTexture", tempTexture);     
         LBMCompute.SetTexture(Stream, "Velocities", VelocityTexture);
-        
-        LBMCompute.SetTexture(PaintPixels, "InputTexture", tempTexture);     
-  
-
+       
         LBMCompute.SetTexture(kernelHandle, "Result", outputTexture);
         LBMCompute.SetTexture(Stream, "Result", outputTexture);
-        LBMCompute.SetTexture(PaintPixels, "Result", outputTexture);
-
+     
         LBMCompute.SetTexture(Tracers, "Velocities", VelocityTexture);
         LBMCompute.SetTexture(Tracers, "HeightTexture", HeightTexture);
        
@@ -193,62 +182,8 @@ public class LBMTest : MonoBehaviour
             
             SetTerrain();
 
-            //LBMCompute.SetFloat("_RelaxationTime", relaxationTime);
         }
 
     }
-    void Draw()
-    {
-        if (Input.GetMouseButton(0))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit, 1000))
-            {
-                Vector3 mousePos = Input.mousePosition;
-
-                // determine indices where the user clicked
-                float posx = mousePos.x * 0.5f * _Width / _Height;
-                float posy = mousePos.y + 6;
-                int x = (int)(posx);
-                int y = (int)(posy);
-                
-                
-                if (x < 1 || x >= _Width || y < 1 || y >= _Height) return;
-             
-                LBMCompute.SetVector("MouseUV", new Vector2(x,y));
-                LBMCompute.SetVector("ColorPaint", new Vector4(1,1,1,1));
-
-                // Dispatch the compute shader to modify the pixels
-                LBMCompute.Dispatch(PaintPixels, _Width / 8, _Height / 8, 1);
-                //Graphics.Blit(obstacles, tempTexture);
-                //LBMCompute.SetTexture(Stream, "InputTexture", tempTexture);
-            }
-        }
-        if (Input.GetMouseButton(1))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit, 1000))
-            {
-                Vector3 mousePos = Input.mousePosition;
-
-                float posx = mousePos.x * 0.5f * _Width / _Height;
-                float posy = mousePos.y + 6;
-                int x = (int)(posx);
-                int y = (int)(posy);
-
-                if (x < 1 || x >= _Width || y < 1 || y >= _Height) return;
-
-                LBMCompute.SetVector("MouseUV", new Vector2(x, y));
-                LBMCompute.SetVector("ColorPaint", new Vector4(0, 0, 0, 1));
-
-                // Dispatch the compute shader to modify the pixels
-                LBMCompute.Dispatch(PaintPixels, _Width / 8, _Height / 8, 1);
-                
-            }
-        }
-
-
-    }
+   
 }

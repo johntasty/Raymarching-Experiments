@@ -1,7 +1,6 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 #pragma kernel Stream
-#pragma kernel PaintPixels
 #pragma kernel Tracers
 
 
@@ -9,6 +8,9 @@
 #define one9th   1.0 / 9.0
 #define one36th  1.0 / 36.0
 
+//starting velocity
+//TODO
+//Sim breaks if its to high
 #define VEL 0.2
 // Definition of D2Q9 lattice
     /*
@@ -19,17 +21,17 @@
     7   4   8
     */
 // Define a constant array
-// LBM variables
 
+//Visualization
 RWTexture2D<float4> Result;
+//Heightmap Texture 
 RWTexture2D<float4> HeightTexture;
-RWTexture2D<float4> Velocities;
 
+RWTexture2D<float4> Velocities;
+//Terrain texture
 RWTexture2D<float4> InputTexture;
 
-int gridSize;
-float _VelocityCap;
-float _Contrast;
+
 struct PixelData {
 
     float n0;
@@ -50,10 +52,10 @@ struct VelocityData {
 };
 RWStructuredBuffer<VelocityData> VelocitiesBuffer;
 
-//float ux0;
-float omegaf;
-float viscosity;
 
+float _VelocityCap;
+float _Contrast;
+float viscosity;
 float _RelaxationTime;
 float _Time;
 
@@ -104,6 +106,7 @@ void SetZeroes(int id) {
     gridBuffer[id] = gridSquare;
 
 }
+//Initiallize fluid
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
@@ -166,7 +169,7 @@ void Stream(uint3 id : SV_DispatchThreadID)
     int NeighborDownRight = yminus * width + xplus;
     int NeighborDownLeft = yminus * width + xminus;
 
-   
+   //=======Collision Step=======
 
     for (int i = 0; i < 2; i++)
     {        
@@ -371,23 +374,6 @@ void Stream(uint3 id : SV_DispatchThreadID)
        
 }
 
-float2 MouseUV;
-float4 ColorPaint;
-[numthreads(8, 8, 1)]
-void PaintPixels(uint3 id : SV_DispatchThreadID)
-{
-    // Get the pixel position
-    uint2 pixelPos = uint2(id.xy);
-   
-    float distance = length(pixelPos - MouseUV);
-
-    // Check if the pixel is within the circle radius
-    if (distance <= 10)
-    {
-        // Modify the color of the pixel
-        InputTexture[pixelPos] = ColorPaint;
-    }
-}
 
 // Hash function from H. Schechter & R. Bridson, goo.gl/RXiKaH
 uint Hash(uint s)
