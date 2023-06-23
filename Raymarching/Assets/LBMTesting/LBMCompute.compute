@@ -262,15 +262,7 @@ void Stream(uint3 id : SV_DispatchThreadID)
 
         if (normalizedGrayscale > .01) {
 
-          /*  nE[x + 1 + y * xdim] = nW[index];
-            nW[x - 1 + y * xdim] = nE[index];
-            nN[x + (y + 1) * xdim] = nS[index];
-            nS[x + (y - 1) * xdim] = nN[index];
-            nNE[x + 1 + (y + 1) * xdim] = nSW[index];
-            nNW[x - 1 + (y + 1) * xdim] = nSE[index];
-            nSE[x + 1 + (y - 1) * xdim] = nNW[index];
-            nSW[x - 1 + (y - 1) * xdim] = nNE[index];*/
-
+         
             NeighBorRight.northE     = gridSquare.northW;
             NeighBorLeft.northW      = gridSquare.northE;
             NeighBorUp.northN        = gridSquare.northS;
