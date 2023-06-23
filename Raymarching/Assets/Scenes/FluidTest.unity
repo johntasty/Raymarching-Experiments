@@ -6998,7 +6998,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ddf0725db5c54e0fbe4b538167582b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  obstacles: {fileID: 2800000, guid: 2f82cc5580d4242c89a77043c1abe084, type: 3}
+  obstacles: {fileID: 2800000, guid: 19368b73b2ef6ef459f0e00e342972d3, type: 3}
   showVel: 1
   showDens: 0
   part: {fileID: 11411634, guid: 08b02c21d9d5e424c9cb73adab3ae299, type: 3}

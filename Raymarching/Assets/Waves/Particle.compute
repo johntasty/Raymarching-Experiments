@@ -1,0 +1,60 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+struct Particle
+{
+    float posX;
+    float posY;
+};
+RWStructuredBuffer<Particle> ParticlesBuffer;
+float _Time;
+float speed;
+float dstA = 200;
+float gradient;
+float size;
+float smooth;
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID, uint3 idG : SV_GroupThreadID)
+{
+
+    float2 pos;
+    int index = idG.y;
+  
+   
+    // TODO use a more performant way for pixel particles
+    for (int i = 0; i < 64; i++)
+    {
+        Particle particleCurrent = ParticlesBuffer[i];
+        pos = float2(particleCurrent.posX, particleCurrent.posY);
+        pos.x += _Time * speed;
+        if (pos.x > 512)pos.x = 0;
+        ParticlesBuffer[i].posX = pos.x;
+        ParticlesBuffer[i].posY = pos.y;
+
+        float dist = length(id.xy - pos) - size;
+        dstA = min(dist, dstA);
+    }
+   /* Particle particleCurrent = ParticlesBuffer[32];
+    pos = float2(particleCurrent.posX, particleCurrent.posY);
+    pos.x += _Time * speed;
+    if (pos.x > 512)pos.x = 0;
+    if (id.y == 32) {
+        ParticlesBuffer[32].posX = pos.x;
+        ParticlesBuffer[32].posY = pos.y;
+    }*/
+
+
+       //TODO
+    // Bump should be smoother, connect wavefronts
+    float alpha = clamp(abs(dstA) / gradient, 0.0, 1.0) * smooth;
+    //float alpha = smoothstep(-smooth, smooth, dstA);
+    float3 color = float3(alpha, alpha, alpha);
+   
+    Result[id.xy] = float4(color, 1);
+  
+   
+}

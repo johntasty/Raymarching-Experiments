@@ -5,11 +5,11 @@
 #pragma kernel Tracers
 
 
-#define four9ths 0.44444
-#define one9th   0.11111
-#define one36th  0.02777
+#define four9ths 4.0 / 9.0
+#define one9th   1.0 / 9.0
+#define one36th  1.0 / 36.0
 
-#define VEL 0.12
+#define VEL 0.2
 // Definition of D2Q9 lattice
     /*
     6   2   5
@@ -22,11 +22,14 @@
 // LBM variables
 
 RWTexture2D<float4> Result;
+RWTexture2D<float4> HeightTexture;
 RWTexture2D<float4> Velocities;
+
 RWTexture2D<float4> InputTexture;
 
 int gridSize;
-
+float _VelocityCap;
+float _Contrast;
 struct PixelData {
 
     float n0;
@@ -41,41 +44,35 @@ struct PixelData {
 };
 RWStructuredBuffer<PixelData> gridBuffer;
 
+struct VelocityData {
+    float posX;
+    float posY;
+};
+RWStructuredBuffer<VelocityData> VelocitiesBuffer;
+
 //float ux0;
 float omegaf;
 float viscosity;
 
 float _RelaxationTime;
 float _Time;
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
-{
-    //relaxation time
-    float Relaxation = _RelaxationTime;
 
-    int height, width;
-    Result.GetDimensions(width, height);
+void SetEquilibrium(int id, float velX, float velY, float density) {
 
-    // Access the grid square in the buffer
-    int index = id.y * width + id.x;   
-    PixelData gridSquare = gridBuffer[index];
+    PixelData gridSquare = gridBuffer[id];
 
-    //pixel vars
-    float rho, xVel, yVel; 
+    float rho = density;
 
-    rho = 1.;
-    xVel = VEL; //* (1. + .1 * id.y / height);
-    yVel = 0.;
-       
-    float ux3 = 3 * xVel;
-    float uy3 = 3 * yVel;
-    float ux2 = xVel * xVel;
-    float uy2 = yVel * yVel;
+    float ux3 = 3 * velX;
+    float uy3 = 3 * velY;
+    float ux2 = velX * velX;
+    float uy2 = velY * velY;
 
-    float uxuy2 = 2 * xVel * yVel;
+    float uxuy2 = 2 * velX * velY;
     float u2 = ux2 + uy2;
     float u215 = 1.5 * u2;
-    
+
+
     gridSquare.n0 = four9ths * rho * (1 - u215);
     gridSquare.northE = one9th * rho * (1 + ux3 + 4.5 * ux2 - u215);
     gridSquare.northW = one9th * rho * (1 - ux3 + 4.5 * ux2 - u215);
@@ -86,10 +83,46 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     gridSquare.northSE = one36th * rho * (1 + ux3 - uy3 + 4.5 * (u2 - uxuy2) - u215);
     gridSquare.northNW = one36th * rho * (1 - ux3 + uy3 + 4.5 * (u2 - uxuy2) - u215);
     gridSquare.northSW = one36th * rho * (1 - ux3 - uy3 + 4.5 * (u2 + uxuy2) - u215);
-    gridBuffer[index] = gridSquare;
 
-    Result[id.xy] = float4(xVel, yVel, rho, Relaxation);
-    Velocities[id.xy] = float4(xVel, yVel, rho, Relaxation);
+    gridBuffer[id] = gridSquare;
+
+}
+void SetZeroes(int id) {
+    PixelData gridSquare = gridBuffer[id];
+
+    gridSquare.n0      = 0;
+    gridSquare.northE  = 0;
+    gridSquare.northW  = 0;
+    gridSquare.northN  = 0;
+    gridSquare.northS  = 0;
+                        
+    gridSquare.northNE = 0;
+    gridSquare.northSE = 0;
+    gridSquare.northNW = 0;
+    gridSquare.northSW = 0;
+
+    gridBuffer[id] = gridSquare;
+
+}
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+   
+    int height, width;
+    Result.GetDimensions(width, height);
+
+    // Access the grid square in the buffer
+    int index = id.y * width + id.x;   
+    PixelData gridSquare = gridBuffer[index];
+
+    float4 color = InputTexture[id.xy];
+    float normalizedGrayscale = color.r;
+
+    SetEquilibrium(index, VEL, 0., 1.);
+    
+
+    Result[id.xy] = float4(VEL, 0, 1., 1.);
+    Velocities[id.xy] = float4(VEL, 0., 1., 1.);
 }
 
 
@@ -111,8 +144,32 @@ void Stream(uint3 id : SV_DispatchThreadID)
     float rho, xVel, yVel, relaxation, viscos;
     relaxation = _RelaxationTime;
     viscos = viscosity;
-    for (int i = 0; i < 4; i++)
+
+   
+
+    if (id.x == 0 || id.x == width)
     {
+        SetEquilibrium(CurrentCell, VEL, 0, 1.);
+    }
+    
+    int xplus = ((id.x == width - 1) ? (0) : (id.x + 1));
+    int xminus = ((id.x == 0) ? (width - 1) : (id.x - 1));
+    int yplus = ((id.y == height - 1) ? (0) : (id.y + 1));
+    int yminus = ((id.y == 0) ? (height - 1) : (id.y - 1));
+    //grab neighbors
+    int NeighborRight = id.y * width + xplus;
+    int NeighborLeft = id.y * width + xminus;
+    int NeighborUp = yplus * width + id.x;
+    int NeighborDown = yminus * width + id.x;
+    int NeighborUpRight = yplus * width + xplus;
+    int NeighborUpLeft = yplus * width + xminus;
+    int NeighborDownRight = yminus * width + xplus;
+    int NeighborDownLeft = yminus * width + xminus;
+
+   
+
+    for (int i = 0; i < 2; i++)
+    {        
         rho = gridSquare.n0 + gridSquare.northN + gridSquare.northS + gridSquare.northE +
             gridSquare.northW + gridSquare.northNW + gridSquare.northNE + gridSquare.northSW + gridSquare.northSE;
 
@@ -125,55 +182,45 @@ void Stream(uint3 id : SV_DispatchThreadID)
 
         //velocity cap for stability
         float norm = sqrt(xVel * xVel + yVel * yVel);
-        if (norm > 0.2)
+        if (norm > _VelocityCap)
         {
-            xVel *= 0.2 / norm;
-            yVel *= 0.2 / norm;
+            xVel *= _VelocityCap / norm;
+            yVel *= _VelocityCap / norm;
         }
 
+
         //dencities
-        float one9thRho = one9th * rho;
-        float one36thRho = one36th * rho;
+
+        float one9thn = one9th * rho;
+        float one36thn = one36th * rho;
 
         //velocities 
-        float ux3 = 3 * xVel;
-        float uy3 = 3 * yVel;
-        float ux2 = xVel * xVel;
-        float uy2 = yVel * yVel;
+        float vx3 = 3 * xVel;
+        float vy3 = 3 * yVel;
+        float vx2 = xVel * xVel;
+        float vy2 = yVel * yVel;
 
-        float uxuy2 = 2 * xVel * yVel;
-        float u2 = ux2 + uy2;
-        float u215 = 1 - 1.5 * u2;
-        float uxuy = xVel * yVel;
+        float vxvy2 = 2 * xVel * yVel;
+        float v2 = vx2 + vy2;
+        float v215 = 1.5 * v2;
+
         float omega = 1 / (relaxation * viscos + .5);		// reciprocal of relaxation time
 
-        gridSquare.n0 = (1 - omega) * gridSquare.n0 + omega * four9ths * rho * u215;
-        gridSquare.northE = (1 - omega) * gridSquare.northE + omega * one9th * rho * (u215 + 3 * xVel + 4.5 * ux2);
-        gridSquare.northW = (1 - omega) * gridSquare.northW + omega * one9th * rho * (u215 - 3 * xVel + 4.5 * ux2);
-        gridSquare.northN = (1 - omega) * gridSquare.northN + omega * one9th * rho * (u215 + 3 * yVel + 4.5 * uy2);
-        gridSquare.northS = (1 - omega) * gridSquare.northS + omega * one9th * rho * (u215 - 3 * yVel + 4.5 * uy2);
-        gridSquare.northNE = (1 - omega) * gridSquare.northNE + omega * one36th * rho * (u215 + 3 * (xVel + yVel) + 4.5 * (u2 + 2 * uxuy));
-        gridSquare.northSE = (1 - omega) * gridSquare.northSE + omega * one36th * rho * (u215 + 3 * (xVel - yVel) + 4.5 * (u2 - 2 * uxuy));
-        gridSquare.northNW = (1 - omega) * gridSquare.northNW + omega * one36th * rho * (u215 + 3 * (-xVel + yVel) + 4.5 * (u2 - 2 * uxuy));
-        gridSquare.northSW = (1 - omega) * gridSquare.northSW + omega * one36th * rho * (u215 + 3 * (-xVel - yVel) + 4.5 * (u2 + 2 * uxuy));
+        gridSquare.n0 += omega * (four9ths * rho * (1 - v215) - gridSquare.n0);
+
+        gridSquare.northE += omega * (one9thn * (1 + vx3 + 4.5 * vx2 - v215) - gridSquare.northE);
+        gridSquare.northW += omega * (one9thn * (1 - vx3 + 4.5 * vx2 - v215) - gridSquare.northW);
+        gridSquare.northN += omega * (one9thn * (1 + vy3 + 4.5 * vy2 - v215) - gridSquare.northN);
+        gridSquare.northS += omega * (one9thn * (1 - vy3 + 4.5 * vy2 - v215) - gridSquare.northS);
+
+        gridSquare.northNE += omega * (one36thn * (1 + vx3 + vy3 + 4.5 * (v2 + vxvy2) - v215) - gridSquare.northNE);
+        gridSquare.northSE += omega * (one36thn * (1 + vx3 - vy3 + 4.5 * (v2 - vxvy2) - v215) - gridSquare.northSE);
+        gridSquare.northNW += omega * (one36thn * (1 - vx3 + vy3 + 4.5 * (v2 - vxvy2) - v215) - gridSquare.northNW);
+        gridSquare.northSW += omega * (one36thn * (1 - vx3 - vy3 + 4.5 * (v2 + vxvy2) - v215) - gridSquare.northSW);
         //add data back
         gridBuffer[CurrentCell] = gridSquare;
-
-
         //=== STREAMING STEP =======================
-        int xplus = ((id.x == width - 1) ? (0) : (id.x + 1));
-        int xminus = ((id.x == 0) ? (width - 1) : (id.x - 1));
-        int yplus = ((id.y == height - 1) ? (0) : (id.y + 1));
-        int yminus = ((id.y == 0) ? (height - 1) : (id.y - 1));
-        //grab neighbors
-        int NeighborRight = id.y * width + xplus;
-        int NeighborLeft = id.y * width + xminus;
-        int NeighborUp = yplus * width + id.x;
-        int NeighborDown = yminus * width + id.x;
-        int NeighborUpRight = yplus * width + xplus;
-        int NeighborUpLeft = yplus * width + xminus;
-        int NeighborDownRight = yminus * width + xplus;
-        int NeighborDownLeft = yminus * width + xminus;
+        
 
         PixelData NeighBorUp = gridBuffer[NeighborUp];
         PixelData NeighBorDow = gridBuffer[NeighborDown];
@@ -185,51 +232,50 @@ void Stream(uint3 id : SV_DispatchThreadID)
         PixelData NeighBorDownLeft = gridBuffer[NeighborDownLeft];
         PixelData NeighBorDowRi = gridBuffer[NeighborDownRight];
 
+        if (id.x == width && id.y < height - 1) {
 
-        //stream directions
-        gridSquare.northN = NeighBorDow.northN;
-        gridSquare.northNW = NeighBorDowRi.northNW;
-
-        gridSquare.northE = NeighBorLeft.northE;
-        gridSquare.northNE = NeighBorDownLeft.northNE;
-
-        gridSquare.northS = NeighBorUp.northS;
-        gridSquare.northSE = NeighBorUpLeft.northSE;
-
-        gridSquare.northW = NeighBorRight.northW;
-        gridSquare.northSW = NeighBorUpRight.northSW;
-
-        gridBuffer[CurrentCell] = gridSquare;
-
-        //rightmost bounce back
-        if (id.x == width) {
             gridSquare.northW = NeighBorLeft.northW;
-            gridSquare.northNW = NeighBorLeft.northNW;
-            gridSquare.northSW = NeighBorLeft.northSW;
-
+            gridSquare.northNW = NeighBorLeft.northW;
+            gridSquare.northSW = NeighBorLeft.northW;
             gridBuffer[CurrentCell] = gridSquare;
         }
-        if (id.x == 0)//flow from the left
-        {
-            gridSquare.northE = one9th * (1 + 3 * VEL + 3 * VEL * VEL);
+       
+        //stream directions
+        if (id.x < width - 1 ) {
+            gridSquare.northN = NeighBorDow.northN;
+            gridSquare.northNW = NeighBorDowRi.northNW;
 
-            gridSquare.northNE = one36th * (1 + 3 * VEL + 3 * VEL * VEL);
-            gridSquare.northSE = one36th * (1 + 3 * VEL + 3 * VEL * VEL);
+            gridSquare.northE = NeighBorLeft.northE;
+            gridSquare.northNE = NeighBorDownLeft.northNE;
+
+            gridSquare.northS = NeighBorUp.northS;
+            gridSquare.northSE = NeighBorUpLeft.northSE;
+
+            gridSquare.northW = NeighBorRight.northW;
+            gridSquare.northSW = NeighBorUpRight.northSW;
+
             gridBuffer[CurrentCell] = gridSquare;
+        }       
 
-        }
-
-        //bounce 
         if (normalizedGrayscale > .01) {
 
-            NeighBorRight.northE = gridSquare.northW;
-            NeighBorLeft.northW = gridSquare.northE;
-            NeighBorUp.northN = gridSquare.northS;
-            NeighBorDow.northS = gridSquare.northN;
+          /*  nE[x + 1 + y * xdim] = nW[index];
+            nW[x - 1 + y * xdim] = nE[index];
+            nN[x + (y + 1) * xdim] = nS[index];
+            nS[x + (y - 1) * xdim] = nN[index];
+            nNE[x + 1 + (y + 1) * xdim] = nSW[index];
+            nNW[x - 1 + (y + 1) * xdim] = nSE[index];
+            nSE[x + 1 + (y - 1) * xdim] = nNW[index];
+            nSW[x - 1 + (y - 1) * xdim] = nNE[index];*/
 
-            NeighBorUpRight.northNE = gridSquare.northSW;
-            NeighBorUpLeft.northNW = gridSquare.northSE;
-            NeighBorDowRi.northSE = gridSquare.northNW;
+            NeighBorRight.northE     = gridSquare.northW;
+            NeighBorLeft.northW      = gridSquare.northE;
+            NeighBorUp.northN        = gridSquare.northS;
+            NeighBorDow.northS       = gridSquare.northN;
+
+            NeighBorUpRight.northNE  = gridSquare.northSW;
+            NeighBorUpLeft.northNW   = gridSquare.northSE;
+            NeighBorDowRi.northSE    = gridSquare.northNW;
             NeighBorDownLeft.northSW = gridSquare.northNE;
 
             gridBuffer[NeighborUp] = NeighBorUp;
@@ -243,19 +289,21 @@ void Stream(uint3 id : SV_DispatchThreadID)
             gridBuffer[NeighborDownRight] = NeighBorDowRi;
 
         }
-    }
-    
-     Velocities[id.xy] = float4(xVel, yVel, 1., 1.);
+        Velocities[id.xy] = float4(xVel, yVel, 1., 1.);
+    }    
+   
+    float3 colorVel;
     if (normalizedGrayscale > .01) {
-        float4 res = float4(xVel, yVel, 0, 1.0);
-        Result[id.xy] = res;       
+        colorVel.xyz = float3(xVel, yVel, 0);
     }
     else {
-        float normal_value = sqrt(xVel * xVel + yVel * yVel);
+        float contrast = 2 * pow(1.2, _Contrast) + .5;
+        float normal_value = sqrt(xVel * xVel + yVel * yVel) * contrast;
         normal_value = normal_value / 0.2;
-        float3 color;
+
         if (normal_value < 0.0) normal_value = 0.0;
         if (normal_value > 1.0) normal_value = 1.0;
+
         float v1 = 1.0 / 7.0;
         float v2 = 2.0 / 7.0;
         float v3 = 3.0 / 7.0;
@@ -266,60 +314,63 @@ void Stream(uint3 id : SV_DispatchThreadID)
         if (normal_value < v1)
         {
             float c = normal_value / v1;
-            color.x = 70. * (1. - c);
-            color.y = 70. * (1. - c);
-            color.z = 219. * (1. - c) + 91. * c;
+            colorVel.x = 70. * (1. - c);
+            colorVel.y = 70. * (1. - c);
+            colorVel.z = 219. * (1. - c) + 91. * c;
         }
         else if (normal_value < v2)
         {
             float c = (normal_value - v1) / (v2 - v1);
-            color.x = 0.;
-            color.y = 255. * c;
-            color.z = 91. * (1. - c) + 255. * c;
+            colorVel.x = 0.;
+            colorVel.y = 255. * c;
+            colorVel.z = 91. * (1. - c) + 255. * c;
         }
         else if (normal_value < v3)
         {
             float c = (normal_value - v2) / (v3 - v2);
-            color.x = 0. * c;
-            color.y = 255. * (1. - c) + 128. * c;
-            color.z = 255. * (1. - c) + 0. * c;
+            colorVel.x = 0. * c;
+            colorVel.y = 255. * (1. - c) + 128. * c;
+            colorVel.z = 255. * (1. - c) + 0. * c;
         }
         else if (normal_value < v4)
         {
             float c = (normal_value - v3) / (v4 - v3);
-            color.x = 255. * c;
-            color.y = 128. * (1. - c) + 255. * c;
-            color.z = 0.;
+            colorVel.x = 255. * c;
+            colorVel.y = 128. * (1. - c) + 255. * c;
+            colorVel.z = 0.;
         }
         else if (normal_value < v5)
         {
             float c = (normal_value - v4) / (v5 - v4);
-            color.x = 255. * (1. - c) + 255. * c;
-            color.y = 255. * (1. - c) + 96. * c;
-            color.z = 0.;
+            colorVel.x = 255. * (1. - c) + 255. * c;
+            colorVel.y = 255. * (1. - c) + 96. * c;
+            colorVel.z = 0.;
         }
         else if (normal_value < v6)
         {
             float c = (normal_value - v5) / (v6 - v5);
-            color.x = 255. * (1. - c) + 107. * c;
-            color.y = 96. * (1. - c);
-            color.z = 0.;
+            colorVel.x = 255. * (1. - c) + 107. * c;
+            colorVel.y = 96. * (1. - c);
+            colorVel.z = 0.;
         }
         else
         {
             float c = (normal_value - v6) / (1. - v6);
-            color.x = 107. * (1. - c) + 223. * c;
-            color.y = 77. * c;
-            color.z = 77. * c;
+            colorVel.x = 107. * (1. - c) + 223. * c;
+            colorVel.y = 77. * c;
+            colorVel.z = 77. * c;
         }
-        float contrast = .6;
-        float4 res = float4((color.r / 255) * contrast,(color.g / 255) * contrast, (color.b/255) * contrast, 1.0);
-        //float4 res = float4(xVel * 5 + 0.5f, yVel * 5 + 0.5f, 0, 1.0);
-        Result[id.xy] = res;
-        
+       
     }
+
+    float4 res = float4((colorVel.r / 255), (colorVel.g / 255), (colorVel.b / 255), 1.0);
+    //float4 res = float4(xVel * 5 + 0.5f, yVel * 5 + 0.5f, 0, 1.0);  
    
+    Result[id.xy] = res;
+
+       
 }
+
 float2 MouseUV;
 float4 ColorPaint;
 [numthreads(8, 8, 1)]
@@ -338,35 +389,54 @@ void PaintPixels(uint3 id : SV_DispatchThreadID)
     }
 }
 
-struct VelocityData {
-    float posX;
-    float posY;
-};
-RWStructuredBuffer<VelocityData> VelocitiesBuffer;
-
-[numthreads(8, 8, 1)]
-void Tracers(uint3 id : SV_DispatchThreadID)
+// Hash function from H. Schechter & R. Bridson, goo.gl/RXiKaH
+uint Hash(uint s)
 {
-    uint2 pixelPos = uint2(id.xy);
-  
-    float dist = 10;
-    if (id.x == 0) {
+    s ^= 2747636419u;
+    s *= 2654435769u;
+    s ^= s >> 16;
+    s *= 2654435769u;
+    s ^= s >> 16;
+    s *= 2654435769u;
+    return s;
+}
 
+float Random(uint seed)
+{
+    return float(Hash(seed)) / 4294967295.0; // 2^32-1
+}
+float amplitude;
+
+[numthreads(1, 8, 1)]
+void Tracers(uint3 id : SV_DispatchThreadID)
+{  
+    //TODO fix barrier collsiions, sometimes particles pass through
+   
+    for (int i = 0; i < 1; i++)
+    {
+        
         VelocityData particle = VelocitiesBuffer[id.y];
-
-        float2 pos = float2(particle.posX, particle.posY);
+        float2 prevPos = float2(particle.posX, particle.posY);
+        float2 pos = prevPos;
         float2 vel = Velocities[pos].rg;
-
+               
         pos += vel;
-        if (pos.x > 512) pos.x = 0;
-        if (pos.y > 512) pos.y = 0;
-        if (pos.y < 0) pos.y = 512 - 1;
-
+        float2 p = (pos - float2(512, 512)) / 512;
+        if (pos.x > 512) { pos.x = 0; pos.y = Random(id.y) * 512; }
+        if (pos.y > 512) { pos.x = 0; pos.y = Random(id.y) * 512; }
+        if (pos.y < 0) { pos.x = 0; pos.y = Random(id.y) * 512; }
+       
         VelocitiesBuffer[id.y].posX = pos.x;
         VelocitiesBuffer[id.y].posY = pos.y;
 
-
-        Result[pos] = float4(1, 1, 1, 1);
+        float dist = length(p) - 10;
+        if (dist < 0) {
+            float3 color = float3(1, 1, 1) * amplitude; 
+            HeightTexture[prevPos] = float4(0, 0, 0, 1);
+            HeightTexture[pos] = float4(color, 1);
+                        
+        }
+       
     }
-    
+          
 }
