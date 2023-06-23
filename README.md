@@ -47,11 +47,13 @@ this whole project is an effort to recreate this.
 
 For all raymarching raymarching related:
 https://iquilezles.org/ 
+
 Water scattering:
 https://www.alanzucconi.com/2017/10/10/atmospheric-scattering-1/
 
 CPU impementation and starting point:
 https://forum.unity.com/threads/fluid-simulation-tests.311908/
+
 https://developer.nvidia.com/gpugems/gpugems2/part-vi-simulation-and-numerical-algorithms/chapter-47-flow-simulation-complex
 
 Wave Particles:
