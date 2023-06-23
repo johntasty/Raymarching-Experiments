@@ -24,5 +24,7 @@ SOFTWARE.
 # Raymarching Experiments
  Gpu experiments
 The purpose of this repository is to explore the capabilities of raymarching in real time graphics. 
-Breakdown of the code and usage will be written https://johnconstantinou.wixsite.com/johnconstantinou/s-projects-basic here.
-![ezgif com-video-to-gif (1)](https://user-images.githubusercontent.com/51299743/235270316-7c651fb7-8b67-4029-aed0-e2c7be75e853.gif)
+
+#Water Rendering
+
+
