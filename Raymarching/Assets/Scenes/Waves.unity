@@ -319,56 +319,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &669663298
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 669663303}
-  - component: {fileID: 669663299}
-  m_Layer: 0
-  m_Name: Plane
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &669663299
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 669663298}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d602ee45e7e4f54188e9c2261c0c904, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ParticleWavesCompute: {fileID: 7200000, guid: a2612ccb3b841e14899039c7d6f8b7a5,
-    type: 3}
-  WavesShader: {fileID: 2100000, guid: da859f46c6e4c2f418b8a6fc141bd9a4, type: 2}
-  speed: 6
-  gradient: 0
-  size: 0
---- !u!4 &669663303
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 669663298}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -12.57, y: 5.29, z: 0}
-  m_LocalScale: {x: 2.65, y: 2.65, z: 2.65}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &837978664
 GameObject:
   m_ObjectHideFlags: 0
@@ -414,6 +364,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _TerrainObject: {fileID: 563826845}
+  _terrain: {fileID: 0}
   riverMat: {fileID: 2100000, guid: da859f46c6e4c2f418b8a6fc141bd9a4, type: 2}
 --- !u!1 &1205652017
 GameObject:
@@ -645,7 +596,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1717662288532998262
 PrefabInstance:

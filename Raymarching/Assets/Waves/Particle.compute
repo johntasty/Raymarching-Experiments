@@ -9,6 +9,7 @@ struct Particle
 {
     float posX;
     float posY;
+    float height;
 };
 RWStructuredBuffer<Particle> ParticlesBuffer;
 float _Time;
@@ -38,15 +39,23 @@ void CSMain (uint3 id : SV_DispatchThreadID, uint3 idG : SV_GroupThreadID)
         float dist = length(id.xy - pos) - size;
         dstA = min(dist, dstA);
     }
-   /* Particle particleCurrent = ParticlesBuffer[32];
-    pos = float2(particleCurrent.posX, particleCurrent.posY);
-    pos.x += _Time * speed;
-    if (pos.x > 512)pos.x = 0;
-    if (id.y == 32) {
-        ParticlesBuffer[32].posX = pos.x;
-        ParticlesBuffer[32].posY = pos.y;
-    }*/
-
+    //float hDiff = 0;
+    //float hForce = 0;
+    //// influences of neighbours
+    //hDiff = particles[x - 1, z].height - particles[x, z].height;
+    //hForce += viscosity * hDiff;
+    //hDiff = particles[x + 1, z].height - particles[x, z].height;
+    //hForce += viscosity * hDiff;
+    //hDiff = particles[x, z - 1].height - particles[x, z].height;
+    //hForce += viscosity * hDiff;
+    //hDiff = particles[x, z + 1].height - particles[x, z].height;
+    //hForce += viscosity * hDiff;
+    //// influence of normal waterlevel
+    //hDiff = level - particles[x, z].height;
+    //hForce += viscosity * hDiff;
+    //// apply force and update
+    //particles[x, z].AddForce(hForce);
+    //particles[x, z].FixedUpdate();
 
        //TODO
     // Bump should be smoother, connect wavefronts
