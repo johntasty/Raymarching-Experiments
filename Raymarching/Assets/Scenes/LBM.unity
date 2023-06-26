@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
+  m_IndirectSpecularColor: {r: 0.18340752, g: 0.22900593, b: 0.3060297, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -328,14 +328,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 240030217}
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalRotation: {x: 0.20002769, y: 0.7178309, z: -0.22929607, w: 0.6262037}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 35.43, y: 97.8, z: 0}
 --- !u!114 &240030220
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -546,20 +546,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _TerrainObject: {fileID: 694371069}
-  obstacles: {fileID: 2800000, guid: 18c87e0d87ec40247b3de0cbf56efabd, type: 3}
   fluidMat: {fileID: 2100000, guid: 82aba3cf6c3d4d14aa6a829d52448d2d, type: 2}
   WaveMat: {fileID: 2100000, guid: da859f46c6e4c2f418b8a6fc141bd9a4, type: 2}
   LBMCompute: {fileID: 7200000, guid: e52257f996503c347a131b49db6ca98c, type: 3}
-  cam: {fileID: 12872006}
-  width: 100
-  height: 50
-  density0: 1
   viscosity: 0.005
   relaxationTime: 3
-  _VelocityCap: 0.3
-  _Contrast: -13.25
+  _VelocityCap: 0.25
+  _Contrast: -15
   amplitude: 0.2
-  _Reynolds: 100
   _Height: 512
   _Width: 512
   test: []
@@ -767,8 +761,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3623394f1f2c9424791da25cfa3598e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _TerrainObject: {fileID: 694371069}
-  riverMat: {fileID: 2100000, guid: 43ae1e83861324ed9b1f46ee9b4841ea, type: 2}
 --- !u!4 &1917271747
 Transform:
   m_ObjectHideFlags: 0

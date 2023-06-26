@@ -11,7 +11,7 @@
 //starting velocity
 //TODO
 //Sim breaks if its to high
-#define VEL 0.2
+#define VEL .2
 // Definition of D2Q9 lattice
     /*
     6   2   5
@@ -43,6 +43,9 @@ struct PixelData {
     float northNW;
     float northSE;
     float northSW;
+    float velX;
+    float velY;
+    float rho;
 };
 RWStructuredBuffer<PixelData> gridBuffer;
 
@@ -106,6 +109,9 @@ void SetZeroes(int id) {
     gridBuffer[id] = gridSquare;
 
 }
+bool is_wall(float tex, float2 cell, float2 size) {
+    return (size.x < cell.x + 1) || (size.y < cell.y + 1) || (cell.x < 0) || (cell.y < 0) || (tex > 0.05);
+}
 //Initiallize fluid
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
@@ -154,6 +160,10 @@ void Stream(uint3 id : SV_DispatchThreadID)
     {
         SetEquilibrium(CurrentCell, VEL, 0, 1.);
     }
+    if (id.y == 0 || id.y == height)
+    {
+        SetEquilibrium(CurrentCell, VEL, 0, 1.);
+    }
     
     int xplus = ((id.x == width - 1) ? (0) : (id.x + 1));
     int xminus = ((id.x == 0) ? (width - 1) : (id.x - 1));
@@ -170,19 +180,19 @@ void Stream(uint3 id : SV_DispatchThreadID)
     int NeighborDownLeft = yminus * width + xminus;
 
    //=======Collision Step=======
-
-    for (int i = 0; i < 2; i++)
+    float2 size = float2(512, 512);
+    for (int i = 0; i < 4; i++)
     {        
         rho = gridSquare.n0 + gridSquare.northN + gridSquare.northS + gridSquare.northE +
             gridSquare.northW + gridSquare.northNW + gridSquare.northNE + gridSquare.northSW + gridSquare.northSE;
-
+        gridSquare.rho = rho;
         //velocity
         xVel = (gridSquare.northE + gridSquare.northNE + gridSquare.northSE -
             gridSquare.northW - gridSquare.northNW - gridSquare.northSW) / rho;
-
+        gridSquare.velX = xVel;
         yVel = (gridSquare.northN + gridSquare.northNE + gridSquare.northNW -
             gridSquare.northS - gridSquare.northSE - gridSquare.northSW) / rho;
-
+        gridSquare.velY = yVel;
         //velocity cap for stability
         float norm = sqrt(xVel * xVel + yVel * yVel);
         if (norm > _VelocityCap)
@@ -235,7 +245,7 @@ void Stream(uint3 id : SV_DispatchThreadID)
         PixelData NeighBorDownLeft = gridBuffer[NeighborDownLeft];
         PixelData NeighBorDowRi = gridBuffer[NeighborDownRight];
 
-        if (id.x == width && id.y < height - 1) {
+        if (id.x == width && id.y < height - 2) {
 
             gridSquare.northW = NeighBorLeft.northW;
             gridSquare.northNW = NeighBorLeft.northW;
@@ -245,22 +255,22 @@ void Stream(uint3 id : SV_DispatchThreadID)
        
         //stream directions
         if (id.x < width - 1 ) {
-            gridSquare.northN = NeighBorDow.northN;
-            gridSquare.northNW = NeighBorDowRi.northNW;
+            gridSquare.northN = is_wall(normalizedGrayscale, id.xy,  size) ? gridSquare.northS : NeighBorDow.northN;
+            gridSquare.northNW = is_wall(normalizedGrayscale, id.xy, size) ? gridSquare.northNE : NeighBorDowRi.northNW;
 
-            gridSquare.northE = NeighBorLeft.northE;
-            gridSquare.northNE = NeighBorDownLeft.northNE;
-
-            gridSquare.northS = NeighBorUp.northS;
-            gridSquare.northSE = NeighBorUpLeft.northSE;
-
-            gridSquare.northW = NeighBorRight.northW;
-            gridSquare.northSW = NeighBorUpRight.northSW;
+            gridSquare.northE  = is_wall(normalizedGrayscale, id.xy, size) ? gridSquare.northW : NeighBorLeft.northE;
+            gridSquare.northNE = is_wall(normalizedGrayscale, id.xy, size) ? gridSquare.northNW : NeighBorDownLeft.northNE;
+                                 
+            gridSquare.northS  = is_wall(normalizedGrayscale, id.xy, size) ? gridSquare.northN : NeighBorUp.northS;
+            gridSquare.northSE = is_wall(normalizedGrayscale, id.xy, size) ? gridSquare.northSW : NeighBorUpLeft.northSE;
+                                
+            gridSquare.northW  = is_wall(normalizedGrayscale, id.xy, size) ? gridSquare.northE : NeighBorRight.northW;
+            gridSquare.northSW = is_wall(normalizedGrayscale, id.xy, size) ? gridSquare.northSE : NeighBorUpRight.northSW;
 
             gridBuffer[CurrentCell] = gridSquare;
         }       
 
-        if (normalizedGrayscale > .01) {
+        /*if (normalizedGrayscale > .05) {
 
          
             NeighBorRight.northE     = gridSquare.northW;
@@ -283,7 +293,7 @@ void Stream(uint3 id : SV_DispatchThreadID)
             gridBuffer[NeighborDownLeft] = NeighBorDownLeft;
             gridBuffer[NeighborDownRight] = NeighBorDowRi;
 
-        }
+        }*/
         Velocities[id.xy] = float4(xVel, yVel, 1., 1.);
     }    
    

@@ -43,6 +43,9 @@ public class LBMTest : MonoBehaviour
         public float northNW;
         public float northSE;
         public float northSW;
+        public float velX;
+        public float velY;
+        public float rho;
     }
     public PixelData[] test;
 
@@ -121,6 +124,9 @@ public class LBMTest : MonoBehaviour
             pixelData.northNW = 0f;
             pixelData.northSE = 0f;
             pixelData.northSW = 0f;
+            pixelData.velX = 0f;
+            pixelData.velY = 0f;
+            pixelData.rho = 0f;
 
             initialData[i] = pixelData;
         }
@@ -141,7 +147,7 @@ public class LBMTest : MonoBehaviour
 
 
         // Create the compute buffer
-        bufferInitial = new ComputeBuffer(size, sizeof(float) * 9);       
+        bufferInitial = new ComputeBuffer(size, sizeof(float) * 12);       
         bufferInitial.SetData(initialData);
         // Pass the buffer to the compute shader
         LBMCompute.SetBuffer(kernelHandle, "gridBuffer", bufferInitial);
@@ -156,7 +162,7 @@ public class LBMTest : MonoBehaviour
         LBMCompute.SetBuffer(Stream, "gridBuffer", bufferInitial);
        
         fluidMat.SetTexture("_MainTex", outputTexture);
-        WaveMat.SetTexture("_MainTex", HeightTexture);
+        WaveMat.SetTexture("_MainTex", VelocityTexture);
        
 
     }

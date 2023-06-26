@@ -4,6 +4,7 @@ Shader "Unlit/RayMarch"
     {
 
          [MainTexture] _MainTex("Texture", 2D) = "white" {}
+        _NoiseTex("Noise Texture", 2D) = "white" {}
         _BaseColor("Base Color", Color) = (0, 0, 0.5, 0.3)        
         _BaseBrightness("Base Brightness", Float) = 0
 
@@ -39,11 +40,14 @@ Shader "Unlit/RayMarch"
 
         _Accuracy("_Accuracy", Float) = 0.001
 
+        _GridResolution("Grid Resolution", Float) = 10
         _Bounds("Bounds", Vector) = (0,0,0)
         _Offset("Offset", Vector) = (0,0,0)
       
         _Smooth("_Smooth", Float) = 0.
         size("Tilling", Vector) = (0,0,0)
+        _FlowSpeed("Flow Speed", Float) = 0.
+        _WaveLen("_WaveLen Speed", Float) = 0.
         HEIGHT_FACTOR("HEIGHT", Float) = 0.5
      
     }
@@ -81,8 +85,11 @@ Shader "Unlit/RayMarch"
             float4 vertex : SV_POSITION;
         };
         TEXTURE2D(_MainTex);
+        TEXTURE2D(_NoiseTex);
         SAMPLER(sampler_MainTex);
+        SAMPLER(sampler_NoiseTex);
         float4 _MainTex_ST;
+        float4 _NoiseTex_ST;
 
         float4 _BaseColor;
         float _BaseBrightness;
@@ -121,10 +128,13 @@ Shader "Unlit/RayMarch"
       
         uniform half HEIGHT_FACTOR;
         half2 size;
+        half _FlowSpeed;
 
         half4 _Bounds;       
         half4 _Offset;       
         half _Smooth;
+        half _WaveLen;
+        half _GridResolution;
         
        
         // Box intersection by IQ https://iquilezles.org/articles/boxfunctions
@@ -148,22 +158,72 @@ Shader "Unlit/RayMarch"
             return float2(tN, tF);
         }
     
+        float2 FlowUV(float2 uv, float2 flowVector, float time) {
+            
+            return uv - flowVector ;
+        }
+            
+        float2 rotateUV(float2 uv, float2 direction)
+        {
+            // Normalize the direction vector
+            direction = normalize(direction);
+
+            // Calculate the rotation matrix
+            float2x2 rotationMatrix = float2x2(
+                direction.x, -direction.y,
+                direction.y, direction.x
+            );
+
+            // Rotate the UV coordinates
+            return mul(float2x2(direction.x, -direction.y, direction.y, direction.x), uv);
+        }
+        float quiverPlot(float2 uv, float2 direction, float gridSize, float2 uv2)
+        {
+            float lineThickness = 0.03;    // Thickness of the arrow line
+            float tipSteepness = 3.0;      // Controls the angle of the arrow tip
+
+            float maxSize = 0.9;           // Maximum arrow length (1 should be the max)
+            float minSize = 0.25;           // Minimum arrow length
+
+            // break UV coordinates into grid sections
+            uv = frac(uv * gridSize) - 0.5;
+
+            // scale point size with vector length
+            float vectorLen = length(direction);
+            float size = lerp(minSize, maxSize, clamp(vectorLen, 0.0, 1.0));
+            uv /= size;
+
+            // Rotate UV coordinates based on the direction vector
+            uv = rotateUV(uv, direction);
+
+            // absolute position
+            float absV = abs(uv.y);
+
+            // Calculate center line of the arrow shape
+            float height = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, uv2 + uv).a;
+           
+            return  height;
+        }
+        // loads noise texture and turns it into flowmap
+        float2 flowTex(float2 uv) {
+            
+            float4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv );
+            float2 flowMap = tex.xy * _WaveLen;
+            
+            return flowMap; // constant bias scale for -1 to 1 range
+        }
+      
         float sdBox(float3 p)
         {
             const float g = sin(atan2(1., 2));
             float3 q = abs(p) - _Bounds.xyz;
-            float2 uv = size * (p.xz + _Offset.xy);
-
-          /*  uv = uv * 1024 + 0.5;
-
-            float2 iuv = floor(uv);
-            float2 fuv = frac(uv);
-            uv = iuv + fuv * fuv * (3.0 - 2.0 * fuv);
-            uv = (uv - 0.5) / 1024;*/
-
-            //uv.y += _Time.y * .1;
+            float2 uv = (p.xz + _Offset.xy);                    
+            float2 time = _Time.y * float2(1,0) * _FlowSpeed;
+            // Making flowmap
+            float2 flowMap = flowTex(uv);
+            //float arrows = quiverPlot(uv, flowMap, _GridResolution, p.xz + _Time.y * _FlowSpeed);
             
-            float h =  SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,  uv).r;
+            float h = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, flowMap + uv + time).a;
             h *= HEIGHT_FACTOR;
 
             q.y -= h;
@@ -188,6 +248,52 @@ Shader "Unlit/RayMarch"
                 e.xxx * map(pos + e.xxx));
           
         }
+        // Get orthonormal basis from surface normal
+        // https://graphics.pixar.com/library/OrthonormalB/paper.pdf
+        void pixarONB(float3 n, out float3 b1, out float3 b2) {
+            float sign_ = n.z >= 0.0 ? 1.0 : -1.0;
+            float a = -1.0 / (sign_ + n.z);
+            float b = n.x * n.y * a;
+            b1 = float3(1.0 + sign_ * n.x * n.x * a, sign_ * b, -sign_ * n.x);
+            b2 = float3(b, sign_ + n.y * n.y * a, -n.y);
+        }
+        float3 getDetailExtrusion(float3 p, float3 normal) {
+
+            float detail = HEIGHT_FACTOR * length(map(p));
+
+            // Increase the normal extrusion height on the upper body
+            float d = 1.0 + smoothstep(0.0, -0.5, p.y);
+            return p + d * detail * normal;
+        }
+        // Return the normal after applying a normal map
+        float3 getDetailNormal(float3 p, float3 normal) {
+
+            float3 tangent;
+            float3 bitangent;
+
+            // Construct orthogonal directions tangent and bitangent to sample detail gradient in
+            pixarONB(normal, tangent, bitangent);
+
+            tangent = normalize(tangent);
+            bitangent = normalize(bitangent);
+
+            float3 delTangent = float3(0,0,0);
+            float3 delBitangent = float3(0,0,0);
+
+            for (int i = 0; i < 2; i++) {
+
+                //i to  s
+                //0 ->  1
+                //1 -> -1
+                float s = 1.0 - 2.0 * float(i & 1);
+
+                delTangent += s * getDetailExtrusion(p + s * tangent * 2e-3, normal);
+                delBitangent += s * getDetailExtrusion(p + s * bitangent * 2e-3, normal);
+
+            }
+            return normalize(cross(delTangent, delBitangent));
+        }
+
         float Saturate(float value) {
             return clamp(value, 0, 1);
         }
@@ -276,6 +382,7 @@ Shader "Unlit/RayMarch"
                 float3 position = ro + box.y * rd;
                
                 half3 normals = getNormal(position);
+
                 half3 refl = reflect(rd, normals);
                 refl.y = abs(refl.y);
                 half3 refrac = refract(rd, normals, 1. / _RefractPower);
