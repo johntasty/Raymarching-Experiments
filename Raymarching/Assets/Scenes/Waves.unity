@@ -363,9 +363,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3623394f1f2c9424791da25cfa3598e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _TerrainObject: {fileID: 563826845}
-  _terrain: {fileID: 0}
-  riverMat: {fileID: 2100000, guid: da859f46c6e4c2f418b8a6fc141bd9a4, type: 2}
 --- !u!1 &1205652017
 GameObject:
   m_ObjectHideFlags: 0
@@ -515,10 +512,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ParticleWavesCompute: {fileID: 7200000, guid: 4211ea1d73884714c98ffed47e42454b,
     type: 3}
-  WavesShader: {fileID: 2100000, guid: da859f46c6e4c2f418b8a6fc141bd9a4, type: 2}
-  speed: 20
+  WavesShader: {fileID: 2100000, guid: 43ae1e83861324ed9b1f46ee9b4841ea, type: 2}
+  speed: 1
   gradient: 20
   size: 15
+  _ParticleData: []
 --- !u!64 &1349418034
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -592,8 +590,8 @@ Transform:
   m_GameObject: {fileID: 1349418032}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -14.01, y: -4.163329, z: 4.8410006}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 5

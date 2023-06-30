@@ -130,17 +130,17 @@ public class LBMTest : MonoBehaviour
 
             initialData[i] = pixelData;
         }
-        VelocityData[] initialVel = new VelocityData[256];
+        VelocityData[] initialVel = new VelocityData[64];
         // Populate the initial data with values
-        for (int i = 0; i < 256; i++)
+        for (int i = 0; i < 64; i++)
         {
             VelocityData initialVeldata = new VelocityData();
-            initialVeldata.posX = 1;
-            initialVeldata.posY = i * 2;
+            initialVeldata.posX = 0;
+            initialVeldata.posY = i * 8;
 
             initialVel[i] = initialVeldata;
         }
-        ComputeBuffer bufferVelo = new ComputeBuffer(256, sizeof(float) * 2);
+        ComputeBuffer bufferVelo = new ComputeBuffer(64, sizeof(float) * 2);
         bufferVelo.SetData(initialVel);
         // Pass the buffer to the compute shader
         LBMCompute.SetBuffer(Tracers, "VelocitiesBuffer", bufferVelo);
@@ -162,7 +162,7 @@ public class LBMTest : MonoBehaviour
         LBMCompute.SetBuffer(Stream, "gridBuffer", bufferInitial);
        
         fluidMat.SetTexture("_MainTex", outputTexture);
-        WaveMat.SetTexture("_MainTex", VelocityTexture);
+        WaveMat.SetTexture("_MainTex", outputTexture);
        
 
     }
@@ -178,7 +178,7 @@ public class LBMTest : MonoBehaviour
     {
         LBMCompute.SetFloat("amplitude", amplitude);
         LBMCompute.Dispatch(Stream, _Width / 8, _Height / 8, 1);
-        LBMCompute.Dispatch(Tracers, 1, 256 / 8, 1);
+        LBMCompute.Dispatch(Tracers, 1, 64 / 8, 1);
         
 
         if (Input.GetKey(KeyCode.A))

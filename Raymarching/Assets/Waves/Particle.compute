@@ -9,7 +9,7 @@ struct Particle
 {
     float posX;
     float posY;
-    float height;
+    float2 origin;
 };
 RWStructuredBuffer<Particle> ParticlesBuffer;
 float _Time;
@@ -18,52 +18,31 @@ float dstA = 200;
 float gradient;
 float size;
 float smooth;
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID, uint3 idG : SV_GroupThreadID)
+[numthreads(1,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
 {
-
-    float2 pos;
-    int index = idG.y;
-  
    
-    // TODO use a more performant way for pixel particles
-    for (int i = 0; i < 64; i++)
+    Particle particleCurrent = ParticlesBuffer[id.y];
+    float2 pos = float2(particleCurrent.posX, particleCurrent.posY);
+    float2 previous = pos;
+   
+    float move =  abs(speed * _Time);
+    
+    float2 direction = (pos - particleCurrent.origin);
+    float angleDisperse = atan2(direction.y, direction.x);
+    // Check if the particle has reached a boundary
+    if (pos.x >= 512 || pos.x < 10)
     {
-        Particle particleCurrent = ParticlesBuffer[i];
-        pos = float2(particleCurrent.posX, particleCurrent.posY);
-        pos.x += _Time * speed;
-        if (pos.x > 512)pos.x = 0;
-        ParticlesBuffer[i].posX = pos.x;
-        ParticlesBuffer[i].posY = pos.y;
+        ParticlesBuffer[id.y].origin = particleCurrent.origin + pos;
+        direction = normalize(pos - particleCurrent.origin);
 
-        float dist = length(id.xy - pos) - size;
-        dstA = min(dist, dstA);
-    }
-    //float hDiff = 0;
-    //float hForce = 0;
-    //// influences of neighbours
-    //hDiff = particles[x - 1, z].height - particles[x, z].height;
-    //hForce += viscosity * hDiff;
-    //hDiff = particles[x + 1, z].height - particles[x, z].height;
-    //hForce += viscosity * hDiff;
-    //hDiff = particles[x, z - 1].height - particles[x, z].height;
-    //hForce += viscosity * hDiff;
-    //hDiff = particles[x, z + 1].height - particles[x, z].height;
-    //hForce += viscosity * hDiff;
-    //// influence of normal waterlevel
-    //hDiff = level - particles[x, z].height;
-    //hForce += viscosity * hDiff;
-    //// apply force and update
-    //particles[x, z].AddForce(hForce);
-    //particles[x, z].FixedUpdate();
+    }    
+    pos.x += cos(angleDisperse) * move;
+    ParticlesBuffer[id.y].posX = pos.x;
+    ParticlesBuffer[id.y].posY = pos.y;
 
-       //TODO
-    // Bump should be smoother, connect wavefronts
-    float alpha = clamp(abs(dstA) / gradient, 0.0, 1.0) * smooth;
-    //float alpha = smoothstep(-smooth, smooth, dstA);
-    float3 color = float3(alpha, alpha, alpha);
-   
-    Result[id.xy] = float4(color, 1);
-  
-   
+    Result[previous] = float4(0, 0, 0, 1);
+    Result[pos] = float4(1, 1, 1, 1);
+    
+     
 }

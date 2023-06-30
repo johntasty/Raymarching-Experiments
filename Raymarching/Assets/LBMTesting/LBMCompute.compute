@@ -400,31 +400,20 @@ void Tracers(uint3 id : SV_DispatchThreadID)
 {  
     //TODO fix barrier collsiions, sometimes particles pass through
    
-    for (int i = 0; i < 1; i++)
-    {
-        
-        VelocityData particle = VelocitiesBuffer[id.y];
-        float2 prevPos = float2(particle.posX, particle.posY);
-        float2 pos = prevPos;
-        float2 vel = Velocities[pos].rg;
-               
-        pos += vel;
-        float2 p = (pos - float2(512, 512)) / 512;
-        if (pos.x > 512) { pos.x = 0; pos.y = Random(id.y) * 512; }
-        if (pos.y > 512) { pos.x = 0; pos.y = Random(id.y) * 512; }
-        if (pos.y < 0) { pos.x = 0; pos.y = Random(id.y) * 512; }
-       
-        VelocitiesBuffer[id.y].posX = pos.x;
-        VelocitiesBuffer[id.y].posY = pos.y;
+    VelocityData particle = VelocitiesBuffer[id.y];
+    float2 prevPos = float2(particle.posX, particle.posY);
+    float2 pos = prevPos;
+    float2 vel = Velocities[pos].rg * amplitude;
 
-        float dist = length(p) - 10;
-        if (dist < 0) {
-            float3 color = float3(1, 1, 1) * amplitude; 
-            HeightTexture[prevPos] = float4(0, 0, 0, 1);
-            HeightTexture[pos] = float4(color, 1);
-                        
-        }
-       
-    }
-          
+    pos += vel;
+    
+    if (pos.x > 512) { pos.x = 0; pos.y = Random(id.y) * 512; }
+    
+
+    VelocitiesBuffer[id.y].posX = pos.x;
+    VelocitiesBuffer[id.y].posY = pos.y;
+
+    HeightTexture[prevPos] = float4(0, 0, 0, 1);
+    HeightTexture[pos] = float4(1,1,1, 1);
+             
 }
