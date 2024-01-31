@@ -178,18 +178,18 @@ public class LBMTest : MonoBehaviour
     {
         LBMCompute.SetFloat("amplitude", amplitude);
         LBMCompute.Dispatch(Stream, _Width / 8, _Height / 8, 1);
-        LBMCompute.Dispatch(Tracers, 1, 64 / 8, 1);
-        
+        LBMCompute.Dispatch(Tracers, 1, 64 / 8, 1);        
 
-        if (Input.GetKey(KeyCode.A))
-        {
-            LBMCompute.SetFloat("_VelocityCap", _VelocityCap);
-            LBMCompute.SetFloat("_Contrast", _Contrast);
-            
-            SetTerrain();
-
-        }
+       
 
     }
-   
+    private void FixedUpdate()
+    {
+        LBMCompute.SetFloat("_VelocityCap", _VelocityCap);
+        LBMCompute.SetFloat("_Contrast", _Contrast);
+
+        SetTerrain();
+    }
 }
+
+

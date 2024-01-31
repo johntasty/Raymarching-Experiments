@@ -1,48 +1,128 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
+#pragma kernel CSClear
 
+#define PI 3.1415926
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture2D<float4> Result;
 
+
 struct Particle
 {
-    float posX;
-    float posY;
-    float2 origin;
+    float m_timeAlive;   
+    float2 m_origin;   
+    float2 m_direction;
+    float m_angle;
+    int alive;
+    int subdivided;
 };
 RWStructuredBuffer<Particle> ParticlesBuffer;
+
+
 float _Time;
+float timeScale;
+float distanceZero;
+
 float speed;
 float dstA = 200;
 float gradient;
 float size;
 float smooth;
-[numthreads(1,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
-{
-   
-    Particle particleCurrent = ParticlesBuffer[id.y];
-    float2 pos = float2(particleCurrent.posX, particleCurrent.posY);
-    float2 previous = pos;
-   
-    float move =  abs(speed * _Time);
-    
-    float2 direction = (pos - particleCurrent.origin);
-    float angleDisperse = atan2(direction.y, direction.x);
-    // Check if the particle has reached a boundary
-    if (pos.x >= 512 || pos.x < 10)
-    {
-        ParticlesBuffer[id.y].origin = particleCurrent.origin + pos;
-        direction = normalize(pos - particleCurrent.origin);
 
-    }    
-    pos.x += cos(angleDisperse) * move;
-    ParticlesBuffer[id.y].posX = pos.x;
-    ParticlesBuffer[id.y].posY = pos.y;
+float mod(float k, float n) { return ((k %= n) < 0) ? k + n : k; }
 
-    Result[previous] = float4(0, 0, 0, 1);
-    Result[pos] = float4(1, 1, 1, 1);
+[numthreads(8, 8, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID, uint3 idG : SV_GroupID)
+{    
+    int threadInd = id.x + id.y * 64;
+    int particleIndex = threadInd;
+    Particle particleCurrent = ParticlesBuffer[particleIndex];
+    float2 origin = particleCurrent.m_origin;
+    if (particleCurrent.alive == 1) {
+
+        float timeAlive = _Time - particleCurrent.m_timeAlive;
+        int sub = particleCurrent.subdivided;
+        float2 direction = particleCurrent.m_direction;
+        float test = particleCurrent.m_origin.x;
+       
+        float2 pos = origin + speed * direction * timeAlive ;
+        float arcDistance = distanceZero + 0.7853982 * speed * timeAlive;
+        
+
+        if (arcDistance > size && sub == 0) {
+            int neighbour = 0;
+            int neighbourTwo = 0;
+            if (particleIndex % 64 == 0) {
+                neighbour = particleIndex + 1;
+                neighbourTwo = particleIndex + 32;
+            }
+            else {
+
+                neighbour = particleIndex + min(1, particleIndex % 32);
+                neighbourTwo = neighbour + 1;
+            }
+           
+            Particle particleNeighborRight = ParticlesBuffer[neighbour];
+            Particle particleNeighborRightTwo = ParticlesBuffer[neighbourTwo];
+            if (particleNeighborRight.alive == 0 && particleNeighborRightTwo.alive == 0) {
+
+                float dispersionAngle = particleCurrent.m_angle / 3.;
+                float coss = cos(dispersionAngle);
+                float sinss = sin(dispersionAngle);
+                float2 rotation = float2(coss, sinss);
+
+                float newX = direction.x * rotation.y - direction.y * rotation.x;
+                float newY = direction.x * rotation.x + direction.y * rotation.y;
+
+                float distArc = arcDistance / 3.;
+                float2 newPosLeft = float2(newX, newY);
+
+                /*float cossR = cos(-dispersionAngle);
+                float sinssR = sin(-dispersionAngle);
+                float2 rotationRight = float2(cossR, sinssR);*/
+
+                /*float newRotationXLeft = direction.x * rotation.x - direction.y * rotation.y;
+                float newRotationYLeft = direction.x * rotation.y + direction.y * rotation.x;
+
+                float newRotationX = direction.x * rotationRight.x - direction.y * rotationRight.y;
+                float newRotationY = direction.x * rotationRight.y + direction.y * rotationRight.x;*/
+
+
+                particleNeighborRight.m_origin = pos + newPosLeft * distArc;
+                particleNeighborRightTwo.m_origin = pos + newPosLeft * -distArc;
+
+                particleNeighborRight.m_timeAlive = _Time;
+                particleNeighborRightTwo.m_timeAlive = _Time;
+
+                particleNeighborRight.m_angle = dispersionAngle;
+                particleNeighborRightTwo.m_angle = dispersionAngle;
+
+                particleNeighborRight.alive = 1;
+                particleNeighborRightTwo.alive = 1;
+
+
+                particleNeighborRight.m_direction    = normalize(particleNeighborRight.m_origin - float2(256., 256.));
+                particleNeighborRightTwo.m_direction = normalize(particleNeighborRightTwo.m_origin - float2(256., 256.));
+
+                ParticlesBuffer[particleIndex].subdivided = 1;
+
+                ParticlesBuffer[neighbour] = particleNeighborRight;
+                ParticlesBuffer[neighbourTwo] = particleNeighborRightTwo;
+            }  
+        }
+        pos.x = mod(pos.x, 513.);
+        pos.y = mod(pos.y, 513.);
+      
+        Result[pos] = float4(1, 1, 1, 1);
+    }  
     
-     
 }
+
+[numthreads(8, 8, 1)]
+void CSClear(uint3 id : SV_DispatchThreadID)
+{
+    Result[id.xy] = float4(0, 0, 0, 1);
+}
+
+

@@ -42,6 +42,7 @@ Shader "Unlit/RayMarch"
 
         _GridResolution("Grid Resolution", Float) = 10
         _Bounds("Bounds", Vector) = (0,0,0)
+        _Base("_Base", Vector) = (0,0,0)
         _Offset("Offset", Vector) = (0,0,0)
       
         _Smooth("_Smooth", Float) = 0.
@@ -52,10 +53,6 @@ Shader "Unlit/RayMarch"
      
     }
         HLSLINCLUDE
-#pragma vertex vert
-#pragma fragment frag
-            // make fog work
-#pragma multi_compile_fog
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -63,7 +60,7 @@ Shader "Unlit/RayMarch"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
 
-            struct appdata
+        struct appdata
         {
             float4 vertex : POSITION;
             float2 uv : TEXCOORD0;
@@ -131,33 +128,13 @@ Shader "Unlit/RayMarch"
         half _FlowSpeed;
 
         half4 _Bounds;       
+        half4 _Base;
         half4 _Offset;       
         half _Smooth;
         half _WaveLen;
         half _GridResolution;
-        
-       
-        // Box intersection by IQ https://iquilezles.org/articles/boxfunctions
-
-        float2 boxIntersection(float3 ro, float3 rd)
-        {
-            float3 oN = 0;
-            float3 m = 1.0 / rd;
-            float3 n = m * ro;
-            float3 k = abs(m) * _Bounds.xyz;
-            float3 t1 = -n - k;
-            float3 t2 = -n + k;
-
-            float tN = max(max(t1.x, t1.y), t1.z);
-            float tF = min(min(t2.x, t2.y), t2.z);
-
-            if (tN > tF || tF < 0.0) return float2(-1.0, -1.0); // no intersection
-
-            oN = -sign(rd) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz);
-
-            return float2(tN, tF);
-        }
-    
+        const float freq = 0.5f;
+           
         float2 FlowUV(float2 uv, float2 flowVector, float time) {
             
             return uv - flowVector ;
@@ -177,33 +154,7 @@ Shader "Unlit/RayMarch"
             // Rotate the UV coordinates
             return mul(float2x2(direction.x, -direction.y, direction.y, direction.x), uv);
         }
-        float quiverPlot(float2 uv, float2 direction, float gridSize, float2 uv2)
-        {
-            float lineThickness = 0.03;    // Thickness of the arrow line
-            float tipSteepness = 3.0;      // Controls the angle of the arrow tip
-
-            float maxSize = 0.9;           // Maximum arrow length (1 should be the max)
-            float minSize = 0.25;           // Minimum arrow length
-
-            // break UV coordinates into grid sections
-            uv = frac(uv * gridSize) - 0.5;
-
-            // scale point size with vector length
-            float vectorLen = length(direction);
-            float size = lerp(minSize, maxSize, clamp(vectorLen, 0.0, 1.0));
-            uv /= size;
-
-            // Rotate UV coordinates based on the direction vector
-            uv = rotateUV(uv, direction);
-
-            // absolute position
-            float absV = abs(uv.y);
-
-            // Calculate center line of the arrow shape
-            float height = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, uv2 + uv).a;
-           
-            return  height;
-        }
+        
         // loads noise texture and turns it into flowmap
         float2 flowTex(float2 uv) {
             
@@ -212,131 +163,99 @@ Shader "Unlit/RayMarch"
             
             return flowMap; // constant bias scale for -1 to 1 range
         }
-      
-        float sdBox(float3 p)
+        // Box intersection by IQ https://iquilezles.org/articles/boxfunctions
+        float2 boxIntersection(in float3 ro, in float3 rd, in float3 rad, out float3 oN)
         {
-            const float g = sin(atan2(1., 2));
-            float3 q = abs(p) - _Bounds.xyz;
-            float2 uv = (p.xz + _Offset.xy);                    
-            float2 time = _Time.y * float2(1,0) * _FlowSpeed;
-            // Making flowmap
-            float2 flowMap = flowTex(uv);
-            //float arrows = quiverPlot(uv, flowMap, _GridResolution, p.xz + _Time.y * _FlowSpeed);
-            
-            float h = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, flowMap + uv + time).a;
-            h *= HEIGHT_FACTOR;
+            float3 m = 1.0 / rd;
+            float3 n = m * ro;
+            float3 k = abs(m) * rad;
+            float3 t1 = -n - k;
+            float3 t2 = -n + k;
 
-            q.y -= h;
-            q.y *= g;
-            return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
-            
-        }
-        float map(float3 pos) {
-                   
-            return sdBox(pos);
-          
-        }
-        float3 getNormal(float3 pos)
-        {    
-            // Tetrahedral normal, IQ.
-            float eps = 1 / _Smooth;
-            float2 e = float2(eps, -eps);
-            return normalize(
-                e.xyy * map(pos + e.xyy) +
-                e.yyx * map(pos + e.yyx) +
-                e.yxy * map(pos + e.yxy) +
-                e.xxx * map(pos + e.xxx));
-          
-        }
-        // Get orthonormal basis from surface normal
-        // https://graphics.pixar.com/library/OrthonormalB/paper.pdf
-        void pixarONB(float3 n, out float3 b1, out float3 b2) {
-            float sign_ = n.z >= 0.0 ? 1.0 : -1.0;
-            float a = -1.0 / (sign_ + n.z);
-            float b = n.x * n.y * a;
-            b1 = float3(1.0 + sign_ * n.x * n.x * a, sign_ * b, -sign_ * n.x);
-            b2 = float3(b, sign_ + n.y * n.y * a, -n.y);
-        }
-        float3 getDetailExtrusion(float3 p, float3 normal) {
+            float tN = max(max(t1.x, t1.y), t1.z);
+            float tF = min(min(t2.x, t2.y), t2.z);
 
-            float detail = HEIGHT_FACTOR * length(map(p));
+            if (tN > tF || tF < 0.0) return float2(-1.0, -1.0); // no intersection
 
-            // Increase the normal extrusion height on the upper body
-            float d = 1.0 + smoothstep(0.0, -0.5, p.y);
-            return p + d * detail * normal;
-        }
-        // Return the normal after applying a normal map
-        float3 getDetailNormal(float3 p, float3 normal) {
+            oN = -sign(rd) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz);
 
-            float3 tangent;
-            float3 bitangent;
-
-            // Construct orthogonal directions tangent and bitangent to sample detail gradient in
-            pixarONB(normal, tangent, bitangent);
-
-            tangent = normalize(tangent);
-            bitangent = normalize(bitangent);
-
-            float3 delTangent = float3(0,0,0);
-            float3 delBitangent = float3(0,0,0);
-
-            for (int i = 0; i < 2; i++) {
-
-                //i to  s
-                //0 ->  1
-                //1 -> -1
-                float s = 1.0 - 2.0 * float(i & 1);
-
-                delTangent += s * getDetailExtrusion(p + s * tangent * 2e-3, normal);
-                delBitangent += s * getDetailExtrusion(p + s * bitangent * 2e-3, normal);
-
-            }
-            return normalize(cross(delTangent, delBitangent));
+            return float2(tN, tF);
         }
 
+        float2 _HeightMap(float3 p)
+        {
+            float2 uv = (p.xz + _Offset.xy);
+            float h = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, uv).rg * HEIGHT_FACTOR;
+            return h;
+        }
+        float3 _GetNormalH(float3 pos)
+        {
+            /*float d = 2 / _Smooth;
+            float hMid = _HeightMap(pos);
+            float hRight = _HeightMap(pos + float3(d, 0, 0));
+            float hTop = _HeightMap(pos + float3(0, 0, d));
+            return normalize(cross(float3(0, hTop - hMid, d), float3(d, hRight - hMid, 0)));*/
+
+            float3 n;
+            float d = 0.01;
+            n.y = _HeightMap(pos);
+            n.x = _HeightMap(float3(pos.x + d, pos.y, pos.z)) - n.y;
+            n.z = _HeightMap(float3(pos.x, pos.y, pos.z + d)) - n.y;
+            n.y = d;
+            return normalize(n);
+        }
+       
+       
         float Saturate(float value) {
             return clamp(value, 0, 1);
         }
-      
-        float specularHighlight(half3 n, half3 l, half3 e, float s) {
-            float nrm = (s + 8.0) / (3.1415 * 8.0);
-            return pow(max(dot(reflect(e, n), l), 0.0), s) * nrm;
+
+        float diffuse(float3 normal, float3 light, float dis) {
+            return pow(dot(normal, light) * _WaterBrightness + 0.6, dis);
+        }
+        float3 specularHighlight(half3 normal, half3 light, half3 direction, float distance) {
+            float3 refl = reflect(direction, normal);
+            float LdotV = dot(refl, light);
+            float surface = _SpecullarBrightness;
+            float sun = smoothstep(surface, 0., 1. - LdotV);
+            return _SpecullarColor * sun * 0.01 / surface;
+
+           /* float nrm = (distance + 8.0) / (3.1415 * 8.0);
+            float spec = pow(max(dot(reflect(direction, normal), light), 0.0), distance) * nrm;
+            return float3(spec, spec, spec);*/
         }
         half3 SkyColors(half3 rayDirection) {
-            float rad = _FresnelSize;
-            half3 col = half3(0,0,0);
-
-            half3 sc = (_BaseColor * _BaseBrightness) * _Smoothness;
-            float a = length(rayDirection.xy);
-            col += rad / (rad + pow(a, _Roughness)) * sc;
-            col = col + lerp(col, _SecondaryColor * _SecondaryBrightness, Saturate(1.0 - length(col))) * _DepthSize;
-            col += .05  * sc;
-
-            return (col);
-        }
-      
-        float2 RayMarchNoise(half3 rayOrigin, half3 rayDir) {
+            rayDirection.y = max(rayDirection.y, 0.0);
+            float3 col = float3(0, 0, 0);
+            col.x = pow(1.0 - rayDirection.y, 2.0);
+            col.y = 1.0 - rayDirection.y;
+            col.z = .6 + (1.0 - rayDirection.y)* _BaseBrightness;
+            return col * _SecondaryBrightness;
           
-            float d;
-            float2 result = float2(-1, -1);
-          
-            UNITY_LOOP
-            for (int i = 0; i < _Max_Steps; i++) {
-                float3 ray = rayOrigin + rayDir * d;
-                float sd = map(ray);
-                result = float2(d, d);      
-                if (ray.y < -_Bounds.y) result = float2(-1, -1);
-                if (sd < _Accuracy) {                    
-                    break;
-                }
-                d += sd;
-                if (d > _Max_Distance)  break;
-            }
-           
-            if (d > _Max_Distance) result = float2(-1, -1);
-            return result;
         }
-      
+        half3 _Shading(float3 pos, float3 rayD,float3 normal, float specular, float dist) 
+        {
+            Light lights = GetMainLight();
+            normal = lerp(normal, float3(0.0, 1.0, 0.0), _Smoothness * min(1.0, sqrt(dist * 0.01) * _Roughness));
+            half3 sunDir = normalize(lights.direction);
+            float3 color = float3(0, 0, 0);
+
+            float fresnel = 1.0 - max(dot(normal, -rayD), 0.0);
+            fresnel = pow(fresnel, _FresnelSize) * _Fresnel;
+          
+            float3 reflected = SkyColors(reflect(rayD, normal));
+            float3 refracted = _Base + diffuse(normal, sunDir, _SunSpec) * _WaterColor * _WaterBrightness;
+
+            color = lerp(refracted, reflected, fresnel);
+
+            float atten = max(1.0 - dist * 0.001, 0.0);
+            color += _WaterColor * (pos.y - _DepthSize) * 0.18 * atten;
+
+            color += float3(specularHighlight(normal, sunDir, rayD, _SpecullarBrightness));
+                       
+            return float3(specularHighlight(normal, sunDir, rayD, _SpecullarBrightness));
+        }
+       
         v2f vert(appdata v)
         {
             v2f o = (v2f)0;
@@ -374,34 +293,49 @@ Shader "Unlit/RayMarch"
             float sceneEyeDepthtest = LinearEyeDepth(nonLinear, _ZBufferParams) * viewDir;
 
                    
-            Light lights = GetMainLight();
-            float2 box = RayMarchNoise(ro, rd);
+            
+          
             half3 color = half3(0, 0, 0);
-            if (box.x > -.5) {
+            float3 n;
+            float2 result = boxIntersection(ro, rd, _Bounds.xyz, n);
+            
+            if (result.x > 0.0) {
 
-                float3 position = ro + box.y * rd;
-               
-                half3 normals = getNormal(position);
-
-                half3 refl = reflect(rd, normals);
-                refl.y = abs(refl.y);
-                half3 refrac = refract(rd, normals, 1. / _RefractPower);
-
-                float fresnel = clamp((pow(1. - max(0.0, dot(-normals, rd)), _Fresnel)), 0.0, 1.0);
-                half3 sunDir = lights.direction;
-
-                color += SkyColors(refl) * fresnel;
-
-                float Scattering = pow(max(0.0, dot(refrac, sunDir)), _ScatteringPower);
-               
-                color += pow(_WaterColor * _WaterBrightness, 2) * Scattering;
-
-                half3 waterColor = (_ScatterColor * _ScatterBrightness) * pow(min(position.y * _ColorHeightStart, _WaterColorClamp), 4.);
-                color += waterColor;
-
-                half3 specularHigh = specularHighlight(normals, sunDir, rd, _SunSpec) * .2;
-                color += specularHigh * (_SpecullarColor * _SpecullarBrightness);
-                return half4(color, 1);
+                float3 position = ro + rd * result.x;
+                float3 heightHit;
+                float3 heightNormal;
+                float tt = result.x;
+                float2 h = _HeightMap(position);
+                float spec;
+                if (position.y < h.x)
+                {
+                    heightNormal = _SecondaryColor;
+                    heightHit = _SecondaryColor;
+                }
+                else
+                {
+                    float3 p = ro + rd * tt;
+                    UNITY_LOOP
+                    for (int i = 0; i < _Max_Steps; i++)
+                    {
+                        p = ro + rd * tt;
+                        float h = p.y - _HeightMap(p).x;
+                        if (h < _Accuracy || tt > result.y)
+                            break;
+                        if (tt > _Max_Distance)  break;
+                        tt += h * 0.4;
+                    }
+                    heightNormal = _GetNormalH(ro + rd * tt);
+                    float dist = distance(p , ro);
+                    heightHit = _Shading(ro + rd * tt, rd, heightNormal, spec, dist);
+                }              
+             
+                if (tt > result.y)
+                {
+                    clip(-1);
+                   
+                }
+                return half4(heightHit, 1);
               
             }
             clip(-1);
@@ -421,7 +355,7 @@ Shader "Unlit/RayMarch"
                 Tags { "LightMode" = "UniversalForward" }
 
                 ZWrite On
-                Blend SrcAlpha OneMinusSrcAlpha
+                //Blend SrcAlpha OneMinusSrcAlpha
                 HLSLPROGRAM
                 // Signal this shader requires a compute buffer
                 #pragma prefer_hlslcc gles
@@ -429,14 +363,14 @@ Shader "Unlit/RayMarch"
                 #pragma target 5.0
 
                 // Lighting and shadow keywords
-                #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
-                #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
+                //#pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
+                //#pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
                 #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
                 #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
                 #pragma multi_compile _ _ADDITIONAL_LIGHTS
                 #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
                 #pragma multi_compile _ _SHADOWS_SOFT
-                #pragma multi_compile_fog
+               
                 #pragma shader_feature FADE
                 #pragma multi_compile_instancing
                 // Register our functions

@@ -14,7 +14,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -41,7 +41,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NoiseTex:
-        m_Texture: {fileID: 2800000, guid: a52103b07723cc64f9ab205402096830, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -58,46 +58,46 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - HEIGHT_FACTOR: 0.9
+    - HEIGHT_FACTOR: 0.5
     - TestDist: 0.91
-    - _Accuracy: 0.001
+    - _Accuracy: 0.0002
     - _AmbientStrengh: 5
-    - _BaseBrightness: 0.25
+    - _BaseBrightness: 1.17
     - _BumpScale: 1.6
     - _ColorClamp: 0.64
-    - _ColorHeightStart: 0.73
+    - _ColorHeightStart: -0.7
     - _Cutoff: 0.5
     - _DepthColorPower: 1.97
-    - _DepthSize: 0.3
+    - _DepthSize: 2
     - _EmmisionSize: 12.7
-    - _FlowSpeed: -0.17
-    - _Fresnel: -0.18
-    - _FresnelSize: 100
+    - _FlowSpeed: 20
+    - _Fresnel: 2.43
+    - _FresnelSize: 3.65
     - _GridResolution: 1
     - _MainColor: 0.27
     - _MaxDistance: 65
     - _MaxSteps: 100
     - _Max_Distance: 75
     - _Max_Steps: 100
-    - _Metallic: 0.2
+    - _Metallic: 0.11
     - _OcclusionStrength: 1
     - _PalleteColor: 6
     - _Parallax: 0.005
     - _Radius: 1.16
     - _Reflections: 0.5
-    - _RefractPower: 1
-    - _Roughness: 5.94
-    - _ScatterBrightness: 1.39
-    - _ScatteringPower: 7.13
-    - _SecondaryBrightness: 0.15
+    - _RefractPower: 0.19
+    - _Roughness: 7.7
+    - _ScatterBrightness: 0.01
+    - _ScatteringPower: 4.22
+    - _SecondaryBrightness: 3.33
     - _ShadowIntensity: 5
     - _ShadowMax: 100
     - _ShadowMin: 0.1
     - _ShadowPenumbra: 5
     - _Size: 0.01
     - _SizeSphere: 0.31
-    - _Smooth: 512
-    - _Smoothness: 0.986
+    - _Smooth: 3.35
+    - _Smoothness: 0.968
     - _SmoothnessTextureChannel: 0
     - _SpecBrightness: 0.16
     - _SpecBrightness2: -0.84
@@ -114,14 +114,14 @@ Material:
     - _SpecPowerPreClamp: 50.82
     - _SpecPowerWater: 0
     - _SpecWater: 0.53
-    - _SpecullarBrightness: 0
+    - _SpecullarBrightness: 0.06
     - _SphereSmooth: 0.7
     - _StrenghLight: 0.28
-    - _SunSpec: 1.07
+    - _SunSpec: 7.13
     - _TestFloat: 0.5
-    - _WaterBrightness: 1.7
-    - _WaterColorClamp: 0.85
-    - _WaveLen: 2
+    - _WaterBrightness: 0.72
+    - _WaterColorClamp: 0.49
+    - _WaveLen: 2.18
     - averageAmplitude: 0.2
     - baseSpeed: 1
     - diffuseStrength: 8.97
@@ -130,24 +130,25 @@ Material:
     - size: 1
     m_Colors:
     - _Aspect: {r: 2, g: 0, b: 1, a: 1}
-    - _BaseColor: {r: 0.056737266, g: 0.14340994, b: 0.4811321, a: 1}
-    - _Bounds: {r: 0.5, g: 0.44, b: 0.5, a: 0}
+    - _Base: {r: 0, g: 0.2, b: 0, a: 1}
+    - _BaseColor: {r: 0.12348701, g: 0.37457973, b: 0.7075472, a: 1}
+    - _Bounds: {r: 0.5, g: 0.25, b: 0.5, a: 0}
     - _BoundsDifuse: {r: 0, g: 0, b: 0, a: 1}
     - _BoundsTest: {r: 0, g: 0, b: 0, a: 1}
     - _DepthColor: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 1}
     - _EmissionColor: {r: 0, g: 0.07197297, b: 0.9056604, a: 1}
     - _FirstColor: {r: 0.031372543, g: 0.21685486, b: 0.90588236, a: 1}
-    - _Offset: {r: 0.5, g: 0.5, b: 0, a: 1}
-    - _ScatterColor: {r: 0.14509803, g: 0.6313726, b: 0.6268435, a: 1}
+    - _Offset: {r: 0.5, g: 0.5, b: 1, a: 2}
+    - _ScatterColor: {r: 0.5660378, g: 0.22400066, b: 0.14684944, a: 1}
     - _SecondColor: {r: 0.7830189, g: 0.2031417, b: 0.2798901, a: 1}
-    - _SecondaryColor: {r: 0.38568, g: 0.5643151, b: 0.764151, a: 1}
+    - _SecondaryColor: {r: 0.13705944, g: 0.3811191, b: 0.8301887, a: 1}
     - _SpecColor: {r: 0.099323556, g: 1.9240777, b: 2.3396225, a: 1}
     - _SpecColorWater: {r: 0, g: 0.47511992, b: 0.8301887, a: 0.3}
     - _SpecColorWater2: {r: 0, g: 0.6981132, b: 0.48250207, a: 0.3}
     - _SpecColorWater3: {r: 0.8301887, g: 0.074050136, b: 0.027411906, a: 1}
-    - _SpecullarColor: {r: 0.754717, g: 0.7356944, b: 0.6728373, a: 1}
+    - _SpecullarColor: {r: 0.8962264, g: 0.72382796, b: 0.5030705, a: 1}
     - _TopColor: {r: 0.6179246, g: 0.7022789, b: 1, a: 1}
-    - _WaterColor: {r: 1, g: 1, b: 1, a: 0.3}
+    - _WaterColor: {r: 0.0701762, g: 0.29534337, b: 0.7830189, a: 1}
     - _WaveOrigin: {r: 0, g: 0, b: 0, a: 1}
-    - size: {r: 2, g: 2, b: 0, a: 1}
+    - size: {r: 1, g: 1, b: 0, a: 1}
   m_BuildTextureStacks: []
