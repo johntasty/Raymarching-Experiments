@@ -15,7 +15,7 @@ public class testRot : MonoBehaviour
     public float ArcDistn;
     public float AngleTest;
     
-    Vector3 dir1;       
+    public float range;       
    
     GameObject[,] spheres; 
     // Start is called before the first frame update
@@ -56,19 +56,32 @@ public class testRot : MonoBehaviour
     }
     private void OnDrawGizmos()
     {
-        if(spheres != null)
-        {
-            Gizmos.color = Color.green;
-            float dispersionAngle = RotationAngl / 3f;
-            float coss = Mathf.Cos(dispersionAngle);
-            float sinss = Mathf.Sin(dispersionAngle);
-            Vector3 rotation = new Vector3(coss,0, sinss);           
-            Gizmos.DrawRay(transform.position, rotation * 25f);
-        }
+        Gizmos.color = Color.green;
+        Gizmos.DrawRay(transform.position, new Vector3(1,0,0) * range);
+        Gizmos.DrawRay(transform.position, new Vector3(0.7071068f, 0, 0.7071068f) * range);
+        Gizmos.DrawRay(transform.position, new Vector3(0, 0, 1) * range);
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, Radius);
-        //Gizmos.color = Color.red;
-        //Gizmos.DrawRay(transform.position, dir4);
+        Gizmos.DrawRay(transform.position, new Vector3(0.9659258f, 0, 0.2588189f) * range);
+        Gizmos.DrawRay(transform.position, new Vector3(0.9659258f, 0, -0.2588189f) * range);
+
+        Gizmos.color = Color.gray;
+        Gizmos.DrawRay(transform.position, new Vector3(0.5000001f, 0, 0.8660253f) * range);
+        Gizmos.DrawRay(transform.position, new Vector3(0.8660253f, 0, 0.5000001f) * range);
+              
+        Gizmos.color = Color.black;                                               
+        Gizmos.DrawRay(new Vector3(267.2102f, 0, 296.8264f), new Vector3(0.5000001f, 0, 0.8660253f) * range);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawRay(new Vector3(292.7955f, 0, 276.9418f), new Vector3(0.8660253f, 0, 0.5000001f) * range);
+                
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawRay(transform.position, new Vector3(-0.2588189f, 0, 0.9659258f) * range);
+        Gizmos.DrawRay(transform.position, new Vector3(0.2588189f, 0, 0.965925f) * range);
+
+        Gizmos.color = Color.cyan;       
+        Gizmos.DrawRay(new Vector3(296.8264f, 0, 267.2102f), new Vector3(0.9659258f, 0, 0.2588189f) * range);
+        Gizmos.color = Color.gray;        
+        Gizmos.DrawRay(new Vector3(292.7955f, 0, 235.0582f), new Vector3(0.9659258f, 0, -0.2588189f) * range);
+               
     }
     // Update is called once per frame
     void Update()
@@ -79,7 +92,7 @@ public class testRot : MonoBehaviour
             spheres[i, 0].transform.position = transform.position + new Vector3(Mathf.Cos(RotationAngles), 0, Mathf.Sin(RotationAngles)) * Radius;
 
             ArcDistn = Radius * RotationAngl;
-            float dispersionAngle = AngleTest;
+            float dispersionAngle = (RotationAngl / 3f) + Mathf.PI / 2f;
             float coss = Mathf.Cos(dispersionAngle);
             float sinss = Mathf.Sin(dispersionAngle);
             Vector2 rotation = new Vector2(coss, sinss);
@@ -89,7 +102,7 @@ public class testRot : MonoBehaviour
             float newY = dir.x * rotation.y + dir.z * rotation.x;
 
             float newX2 = dir.x * rotation.x + dir.z * rotation.y;
-            float newY2 = dir.x * -rotation.y + dir.z * rotation.x;
+            float newY2 = dir.x * -rotation.y + dir.z * rotation.x; 
 
             float distArc = ArcDistn / 3f;
             Vector3 newPosLeft = new Vector3(newX, 0, newY) * distArc;

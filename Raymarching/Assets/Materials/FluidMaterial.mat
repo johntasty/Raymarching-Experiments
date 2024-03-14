@@ -29,6 +29,20 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - Amplitude: 0
+    - DRAG_MULT: 0.048
+    - Denom: 0.048
+    - Depth: 0.048
+    - Detail: 0.048
+    - DetailIter: 8
+    - Frequency: 1.1
+    - FrequencyAdd: 1.1
+    - Iterations: 16
+    - Rand: 0.048
+    - ScrollSpeed: 0.5
+    - Speed: 0.5
+    - Weight: 0.5
+    - _Power: 16
     m_Colors: []
   m_BuildTextureStacks: []

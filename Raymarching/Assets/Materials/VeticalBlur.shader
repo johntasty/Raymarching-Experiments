@@ -6,9 +6,11 @@ Shader "Unlit/VerticalBlur"
         _Secondary ("_Secondary", 2D) = "white" {}
         
         _BlurSize("Blur Size", Float) = 0
-        dxScale("dx Scale", Float) = 0
-        dyScale("dy Scale", Float) = 0
+        dxScale("dx Scale", Range(-10.,10.)) = 0
+        dyScale("dy Scale", Range(-10.,10.)) = 0
         _Power("_Power", Float) = 0
+        _Base("Base Height", Float) = 0
+        HW("HW", Float) = 0
 
     }
     SubShader
@@ -19,7 +21,7 @@ Shader "Unlit/VerticalBlur"
             LOD 100
 
             HLSLINCLUDE
-            #pragma vertex vert
+            #pragma vertex vert        
             #pragma fragment frag
 
 
@@ -29,13 +31,16 @@ Shader "Unlit/VerticalBlur"
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
+               
             };
 
             struct v2f
             {
                 float2 uv : TEXCOORD0;
                 float4 positionHCS : SV_POSITION;
+                               
             };
+                  
 
             TEXTURE2D(_MainTex);
             TEXTURE2D(_Secondary);
@@ -49,6 +54,8 @@ Shader "Unlit/VerticalBlur"
             float dxScale;
             float dyScale;
             float _Power;
+            float _Base;
+            float HW;
             ENDHLSL
                        
         Pass
@@ -70,7 +77,11 @@ Shader "Unlit/VerticalBlur"
 
                 return o;
             }
-
+            float4 RGBToGrayscale(float4 color)
+            {
+                float luminance = dot(color.rgb, float3(0.299, 0.587, 0.114));
+                return float4(luminance, luminance, luminance, color.a);
+            }
             float3 GetFilter(in float v)
             {
                 float s, c;
@@ -81,59 +92,51 @@ Shader "Unlit/VerticalBlur"
                 -0.25f * (c * c - s * s + c) // cos(2v) + cos(v)
                 );
             }
-              float4 RGBToGrayscale(float4 color)
-            {
-                float luminance = dot(color.rgb, float3(0.299, 0.587, 0.114));
-                return float4(luminance, luminance, luminance, color.a);
-            }
             half4 frag(v2f i) : SV_Target
             {
-
+                float texSize = HW;
                 
                 float3 f123 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv).xyz; // x:f_1 y:f_2 z:f_3 (times amplitude)
-                float4 f45v = SAMPLE_TEXTURE2D(_Secondary, sampler_Secondary, i.uv).xyzw; // x:f_4 y:f_5 z:velX w:velY
+                float4 f45v = SAMPLE_TEXTURE2D(_Secondary, sampler_Secondary, i.uv); // x:f_4 y:f_5 z:velX w:velY
                 float4 deviation = float4(f45v.x, 0, f123.x, 1); // initialize deviation at this pixel
                 float4 gradient = float4(f123.y, 0, 0, 1); // initialize gradient at this pixel
-                
                 float2 gradCorr = float2(f123.z, f45v.y); // initialize gradient correction
-                
-
-                float4 col = 0;
-                float invAspect = _ScreenParams.y / _ScreenParams.x;
-
-                for (int j = 1; j <= _BlurSize; j++)
+               
+                float4 col = float4(0, 0, 0, 1);
+                for (int j = 1; j <= (int)_BlurSize; j++)
                 {
-                    float offset = j / float(512.);
+                    float offset = j / texSize;
 
                     float4 f123B = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv + float2(0, offset));
                     float4 f123T = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv + float2(0, -offset));
 
-                    float4 f45vB = SAMPLE_TEXTURE2D(_Secondary, sampler_Secondary, i.uv + float2(0, offset));
+                    float4 f45vB = SAMPLE_TEXTURE2D(_Secondary,sampler_Secondary, i.uv + float2(0, offset));
                     float4 f45vT = SAMPLE_TEXTURE2D(_Secondary, sampler_Secondary, i.uv + float2(0, -offset));
-
+          
                     float3 f = GetFilter(j / float(_BlurSize));
 
+                    
                     deviation.x += (f45vB.x + f45vT.x) * f.x * f.x; // deviation X
                     deviation.y += (f45vB.y - f45vT.y) * 2 * f.x * f.y; // deviation Y
                     deviation.z += (f123B.x + f123T.x) * f.x; // deviation Z
-
                     gradient.x += (f123B.y + f123T.y) * f.x; // gradient X
                     gradient.y += (f123B.x - f123T.x) * f.y; // gradient Y
-
                     gradCorr.x += (f123B.z + f123T.z) * f.x * f.x; // gradient X horizontal deviation
-                    gradCorr.y += (f45vB.y + f45vT.y) * f.z; // gradient Y horizontal deviation
+                    gradCorr.y += (f45vB.y + f45vT.y) * f.z; // gradient Y horizontal deviation    
 
                 }
                 gradCorr *= PI / _BlurSize;
                 gradient.xy *= (PI / _BlurSize) / (1 + gradCorr);
-                               
-
-                deviation.x *= dxScale;
+                            
+                deviation.x *= dxScale;              
                 deviation.y *= dyScale;
-                float4 col1 = float4(-deviation.x, deviation.z, -deviation.y, deviation.w);
-                float4 col2 = gradient;
 
-                return RGBToGrayscale(col2 + col1) * _Power;
+                float4 col1 = float4(deviation.x, deviation.z, deviation.y, 1);
+                float4 col2 = gradient;
+                
+                return  RGBToGrayscale((col1 + col2) * _Power) + _Base;
+                                
+                
                 
             }
             ENDHLSL

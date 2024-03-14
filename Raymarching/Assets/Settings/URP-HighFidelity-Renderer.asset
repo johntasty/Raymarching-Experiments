@@ -134,12 +134,7 @@ MonoBehaviour:
   m_Name: InvertColorsCompute
   m_EditorClassIdentifier: 
   m_Active: 0
-  _ComputeShader: {fileID: 7200000, guid: 1c4813aa4cfb8e5429aafa1f0c8285a5, type: 3}
+  _Shader: {fileID: 2100000, guid: 5b28b36ef91f98249a5995130f8b6978, type: 2}
   Event: 550
-  _BufferNum: 1000
-  _Smooth: 0
-  _Radius: 0.3
-  _MaxSteps: 25
-  _MaxDist: 15
   width: 1920
   height: 1080

@@ -58,46 +58,47 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - HEIGHT_FACTOR: 0.5
+    - HEIGHT_FACTOR: 10
+    - LightIntenSity: 1.12
     - TestDist: 0.91
-    - _Accuracy: 0.0002
+    - _Accuracy: 0.002
     - _AmbientStrengh: 5
-    - _BaseBrightness: 1.17
+    - _BaseBrightness: 4.03
     - _BumpScale: 1.6
     - _ColorClamp: 0.64
-    - _ColorHeightStart: -0.7
+    - _ColorHeightStart: 0.03
     - _Cutoff: 0.5
     - _DepthColorPower: 1.97
-    - _DepthSize: 2
+    - _DepthSize: 0.81
     - _EmmisionSize: 12.7
-    - _FlowSpeed: 20
-    - _Fresnel: 2.43
-    - _FresnelSize: 3.65
-    - _GridResolution: 1
+    - _FlowSpeed: 0.6
+    - _Fresnel: 3
+    - _FresnelSize: 4.71
+    - _GridResolution: 250
     - _MainColor: 0.27
     - _MaxDistance: 65
     - _MaxSteps: 100
     - _Max_Distance: 75
-    - _Max_Steps: 100
-    - _Metallic: 0.11
+    - _Max_Steps: 85
+    - _Metallic: 0.287
     - _OcclusionStrength: 1
     - _PalleteColor: 6
     - _Parallax: 0.005
     - _Radius: 1.16
     - _Reflections: 0.5
-    - _RefractPower: 0.19
-    - _Roughness: 7.7
-    - _ScatterBrightness: 0.01
-    - _ScatteringPower: 4.22
-    - _SecondaryBrightness: 3.33
+    - _RefractPower: 4.19
+    - _Roughness: 4.12
+    - _ScatterBrightness: 3
+    - _ScatteringPower: 5
+    - _SecondaryBrightness: 0.93
     - _ShadowIntensity: 5
     - _ShadowMax: 100
     - _ShadowMin: 0.1
     - _ShadowPenumbra: 5
     - _Size: 0.01
     - _SizeSphere: 0.31
-    - _Smooth: 3.35
-    - _Smoothness: 0.968
+    - _Smooth: 0.05
+    - _Smoothness: 0.464
     - _SmoothnessTextureChannel: 0
     - _SpecBrightness: 0.16
     - _SpecBrightness2: -0.84
@@ -114,41 +115,44 @@ Material:
     - _SpecPowerPreClamp: 50.82
     - _SpecPowerWater: 0
     - _SpecWater: 0.53
-    - _SpecullarBrightness: 0.06
+    - _SpecullarBrightness: 2.59
     - _SphereSmooth: 0.7
     - _StrenghLight: 0.28
-    - _SunSpec: 7.13
+    - _SunSpec: 4.68
     - _TestFloat: 0.5
-    - _WaterBrightness: 0.72
-    - _WaterColorClamp: 0.49
-    - _WaveLen: 2.18
+    - _WaterBrightness: 2.41
+    - _WaterColorClamp: 5.74
+    - _WaterLevel: 0.5
+    - _WaveLen: 4.32
     - averageAmplitude: 0.2
     - baseSpeed: 1
     - diffuseStrength: 8.97
+    - freq: 1
     - meanFrequency: 0.6
     - numberOfWaves: 16
     - size: 1
     m_Colors:
     - _Aspect: {r: 2, g: 0, b: 1, a: 1}
-    - _Base: {r: 0, g: 0.2, b: 0, a: 1}
-    - _BaseColor: {r: 0.12348701, g: 0.37457973, b: 0.7075472, a: 1}
-    - _Bounds: {r: 0.5, g: 0.25, b: 0.5, a: 0}
+    - _Base: {r: 0, g: 0, b: 0, a: 0}
+    - _BaseColor: {r: 0.5313279, g: 0.5572025, b: 0.5660378, a: 1}
+    - _BaseColor2: {r: 0.6792453, g: 0.41778234, b: 0.16981132, a: 1}
+    - _Bounds: {r: 0.5, g: 0.5, b: 0.5, a: 0}
     - _BoundsDifuse: {r: 0, g: 0, b: 0, a: 1}
     - _BoundsTest: {r: 0, g: 0, b: 0, a: 1}
     - _DepthColor: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 1}
     - _EmissionColor: {r: 0, g: 0.07197297, b: 0.9056604, a: 1}
     - _FirstColor: {r: 0.031372543, g: 0.21685486, b: 0.90588236, a: 1}
-    - _Offset: {r: 0.5, g: 0.5, b: 1, a: 2}
-    - _ScatterColor: {r: 0.5660378, g: 0.22400066, b: 0.14684944, a: 1}
+    - _Offset: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _ScatterColor: {r: 0.09807763, g: 0.5864077, b: 0.7169812, a: 1}
     - _SecondColor: {r: 0.7830189, g: 0.2031417, b: 0.2798901, a: 1}
-    - _SecondaryColor: {r: 0.13705944, g: 0.3811191, b: 0.8301887, a: 1}
+    - _SecondaryColor: {r: 0.09878961, g: 0.22144239, b: 0.5660378, a: 1}
     - _SpecColor: {r: 0.099323556, g: 1.9240777, b: 2.3396225, a: 1}
     - _SpecColorWater: {r: 0, g: 0.47511992, b: 0.8301887, a: 0.3}
     - _SpecColorWater2: {r: 0, g: 0.6981132, b: 0.48250207, a: 0.3}
     - _SpecColorWater3: {r: 0.8301887, g: 0.074050136, b: 0.027411906, a: 1}
-    - _SpecullarColor: {r: 0.8962264, g: 0.72382796, b: 0.5030705, a: 1}
+    - _SpecullarColor: {r: 0.8207547, g: 0.47092283, b: 0.24390352, a: 1}
     - _TopColor: {r: 0.6179246, g: 0.7022789, b: 1, a: 1}
-    - _WaterColor: {r: 0.0701762, g: 0.29534337, b: 0.7830189, a: 1}
+    - _WaterColor: {r: 0.08388218, g: 0.32525006, b: 0.6132076, a: 1}
     - _WaveOrigin: {r: 0, g: 0, b: 0, a: 1}
     - size: {r: 1, g: 1, b: 0, a: 1}
   m_BuildTextureStacks: []

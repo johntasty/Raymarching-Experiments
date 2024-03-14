@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -6,26 +7,32 @@ public class LBMTest : MonoBehaviour
     [SerializeField]
     Terrain _TerrainObject;
     TerrainData _terrain;
-
-    [SerializeField]
-    Material fluidMat;
+       
     [SerializeField]
     Material WaveMat;
-
+    [SerializeField]
+    Material Visual;
+    [SerializeField]
+    Material DetailsWaves;
     public ComputeShader LBMCompute;
     ComputeBuffer bufferInitial;
-   
-    private RenderTexture outputTexture;
-    private RenderTexture HeightTexture;
-    private RenderTexture tempTexture;
-    private RenderTexture VelocityTexture;
 
-    
+    ComputeBuffer bufferVelo;
+    int kernelHandleClear;
+    private RenderTexture outputTexture;
+    private RenderTexture HeightTexture;  
+    private RenderTexture VelocityTexture;
+    private RenderTexture DetailTexture;
+
     public float viscosity = 0.05f; // Kinematic viscosity
     public float relaxationTime = 0.5f; // Relaxation time
     public float _VelocityCap;
+    public float _VelocityS;
     public float _Contrast;
     public float amplitude;
+    public float _MaxHeight;
+  
+    public bool _Bounce;
 
     //Terrain heightMap texture size
     public int _Height;
@@ -47,48 +54,56 @@ public class LBMTest : MonoBehaviour
         public float velY;
         public float rho;
     }
-    public PixelData[] test;
 
+    [System.Serializable]
     public struct VelocityData
     {
-        public float posX;
-        public float posY;
+        public Vector2 origin;       
     };
-    public VelocityData[] positionsData;
-
+   
     //Kernels
     int kernelHandle;   
+
     int Stream;
     int Tracers;
     private void SetTerrain()
-    {        
-        fluidMat.SetTexture("_TerrainTex", _terrain.heightmapTexture);
-        Texture terrain_text = fluidMat.GetTexture("_TerrainTex");
-        Graphics.Blit(terrain_text, tempTexture);
+    {
+        Visual.SetTexture("_TerrainTex", _terrain.heightmapTexture);
+        LBMCompute.SetTexture(kernelHandle, "InputTexture", _terrain.heightmapTexture);
+        LBMCompute.SetTexture(Stream, "InputTexture", _terrain.heightmapTexture);
+        _MaxHeight = _terrain.size.y;
+      
     }
     private void Start()
     {
+        TerrainCallbacks.heightmapChanged += heightmapChanged;
+        kernelHandle = LBMCompute.FindKernel("CSMain");
        
-        kernelHandle = LBMCompute.FindKernel("CSMain");        
         Stream = LBMCompute.FindKernel("Stream");
        
         Tracers = LBMCompute.FindKernel("Tracers");
         _terrain = _TerrainObject.terrainData;
-        
+
+        kernelHandleClear = LBMCompute.FindKernel("CSClear");
+
+
         outputTexture = new RenderTexture(_Width, _Height, 0, RenderTextureFormat.ARGB32);
         outputTexture.enableRandomWrite = true;
         outputTexture.Create();
 
-       
+        DetailTexture = new RenderTexture(_Width, _Height, 0, RenderTextureFormat.ARGB32);
+        DetailTexture.wrapMode = TextureWrapMode.Clamp;
+        DetailTexture.filterMode = FilterMode.Bilinear;
+        DetailTexture.Create();
         // Create a temporary RenderTexture from the Texture2D to allow read access in the compute shader
-        tempTexture = new RenderTexture(_Width, _Height, 0, RenderTextureFormat.ARGB32);
-        tempTexture.enableRandomWrite = true;
 
-        VelocityTexture = new RenderTexture(_Width, _Height, 0, RenderTextureFormat.ARGB32);
+        VelocityTexture = new RenderTexture(_Width, _Height, 0, RenderTextureFormat.ARGBFloat);
+        VelocityTexture.wrapMode = TextureWrapMode.Clamp;
+        VelocityTexture.filterMode = FilterMode.Bilinear;
         VelocityTexture.enableRandomWrite = true;
+        VelocityTexture.Create();
 
-
-        HeightTexture = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
+        HeightTexture = new RenderTexture(_Width, _Height, 0, RenderTextureFormat.ARGBFloat);
         HeightTexture.enableRandomWrite = true;
         HeightTexture.wrapMode = TextureWrapMode.Clamp;
         HeightTexture.filterMode = FilterMode.Bilinear;
@@ -96,18 +111,21 @@ public class LBMTest : MonoBehaviour
 
         SetTerrain();
 
-        LBMCompute.SetTexture(kernelHandle, "InputTexture", tempTexture);
+        LBMCompute.SetTexture(kernelHandle, "InputTexture", _terrain.heightmapTexture);
         LBMCompute.SetTexture(kernelHandle, "Velocities", VelocityTexture);
 
-        LBMCompute.SetTexture(Stream, "InputTexture", tempTexture);     
+        LBMCompute.SetTexture(Stream, "InputTexture", _terrain.heightmapTexture);     
         LBMCompute.SetTexture(Stream, "Velocities", VelocityTexture);
        
         LBMCompute.SetTexture(kernelHandle, "Result", outputTexture);
+        
         LBMCompute.SetTexture(Stream, "Result", outputTexture);
      
         LBMCompute.SetTexture(Tracers, "Velocities", VelocityTexture);
         LBMCompute.SetTexture(Tracers, "HeightTexture", HeightTexture);
-       
+
+        
+        LBMCompute.SetTexture(kernelHandleClear, "HeightTexture", HeightTexture);
 
         PixelData[] initialData = new PixelData[_Width * _Height];
         int size = _Width * _Height;
@@ -130,17 +148,17 @@ public class LBMTest : MonoBehaviour
 
             initialData[i] = pixelData;
         }
-        VelocityData[] initialVel = new VelocityData[64];
+        VelocityData[] initialVel = new VelocityData[256];
+      
         // Populate the initial data with values
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < 256; i++)
         {
             VelocityData initialVeldata = new VelocityData();
-            initialVeldata.posX = 0;
-            initialVeldata.posY = i * 8;
-
+            initialVeldata.origin = new Vector2(5, i * 2);
+          
             initialVel[i] = initialVeldata;
         }
-        ComputeBuffer bufferVelo = new ComputeBuffer(64, sizeof(float) * 2);
+        bufferVelo = new ComputeBuffer(256, sizeof(float) * 2);
         bufferVelo.SetData(initialVel);
         // Pass the buffer to the compute shader
         LBMCompute.SetBuffer(Tracers, "VelocitiesBuffer", bufferVelo);
@@ -150,7 +168,9 @@ public class LBMTest : MonoBehaviour
         bufferInitial = new ComputeBuffer(size, sizeof(float) * 12);       
         bufferInitial.SetData(initialData);
         // Pass the buffer to the compute shader
+       
         LBMCompute.SetBuffer(kernelHandle, "gridBuffer", bufferInitial);
+        
 
         LBMCompute.SetFloat("viscosity", viscosity);       
         LBMCompute.SetFloat("_VelocityCap", _VelocityCap);       
@@ -158,37 +178,57 @@ public class LBMTest : MonoBehaviour
         LBMCompute.SetFloat("_RelaxationTime", relaxationTime);      
 
         LBMCompute.Dispatch(kernelHandle, _Width / 8, _Height / 8, 1);
-        
+
         LBMCompute.SetBuffer(Stream, "gridBuffer", bufferInitial);
+
+        Visual.SetTexture("_MainTex", outputTexture);       
+        Visual.SetTexture("_FlowMap", VelocityTexture);
        
-        fluidMat.SetTexture("_MainTex", outputTexture);
-        WaveMat.SetTexture("_MainTex", outputTexture);
-       
+        //WaveMat.SetTexture("_MainTex", VelocityTexture);       
+        WaveMat.SetTexture("_NoiseTex", DetailTexture);
 
     }
+
+    private void heightmapChanged(Terrain terrain, RectInt heightRegion, bool synched)
+    {
+        Visual.SetTexture("_TerrainTex", _terrain.heightmapTexture);
+        LBMCompute.SetTexture(kernelHandle, "InputTexture", _terrain.heightmapTexture);
+        LBMCompute.SetTexture(Stream, "InputTexture", _terrain.heightmapTexture);        
+    }
+
+   
+
     private void OnDisable()
     {
-        bufferInitial.Dispose();
-        tempTexture.Release();
+        bufferInitial.Dispose();       
         VelocityTexture.Release();
         HeightTexture.Release();
+        DetailTexture.Release();
+
+        //TerrainCallbacks.heightmapChanged -= heightmapChanged;
     }
     
     private void Update()
     {
-        LBMCompute.SetFloat("amplitude", amplitude);
-        LBMCompute.Dispatch(Stream, _Width / 8, _Height / 8, 1);
-        LBMCompute.Dispatch(Tracers, 1, 64 / 8, 1);        
+        
+        //LBMCompute.Dispatch(kernelHandleClear, _Width / 8, _Height / 8, 1);        
+        //LBMCompute.Dispatch(Tracers, 256/64,1, 1);
+     
 
-       
+        LBMCompute.Dispatch(Stream, _Width / 8, _Height / 8, 1);
+        //Graphics.Blit(VelocityTexture, HeightTexture, Visual);
+        Graphics.Blit(null, DetailTexture, Visual);
 
     }
     private void FixedUpdate()
     {
         LBMCompute.SetFloat("_VelocityCap", _VelocityCap);
         LBMCompute.SetFloat("_Contrast", _Contrast);
-
-        SetTerrain();
+        LBMCompute.SetFloat("_RelaxationTime", relaxationTime);
+        LBMCompute.SetFloat("viscosity", viscosity);
+        LBMCompute.SetFloat("_Height", amplitude / _MaxHeight);
+        LBMCompute.SetFloat("_VelocityS", _VelocityS);
+        LBMCompute.SetBool("_Bounce", _Bounce);
     }
 }
 

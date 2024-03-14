@@ -14,6 +14,7 @@ struct Particle
     float2 m_origin;   
     float2 m_direction;
     float m_angle;
+    
     int alive;
     int subdivided;
 };
@@ -21,100 +22,144 @@ RWStructuredBuffer<Particle> ParticlesBuffer;
 
 
 float _Time;
-float timeScale;
 float distanceZero;
 
 float speed;
-float dstA = 200;
-float gradient;
 float size;
-float smooth;
-
+float AngleInitial;
+float _MinAngle;
+int maxDivisions;
 float mod(float k, float n) { return ((k %= n) < 0) ? k + n : k; }
 
-[numthreads(8, 8, 1)]
-void CSMain (uint3 id : SV_DispatchThreadID, uint3 idG : SV_GroupID)
+int angleRemain(in float angCur)
+{
+    float remainder = AngleInitial / angCur;
+    int angle = (int)log(remainder);    
+    return angle;
+}
+int divisionsLeft(in int angleRe) 
+{
+    int divLeft = maxDivisions - angleRe;
+    return divLeft;
+}
+
+[numthreads(64, 1, 1)]
+void CSMain (uint3 id : SV_GroupThreadID, uint3 idG : SV_GroupID)
 {    
-    int threadInd = id.x + id.y * 64;
+    /*int Height;
+    int Width;
+    Result.GetDimensions(Height, Width);*/
+    
+    int threadInd = id.x + idG.x * 64;
     int particleIndex = threadInd;
-    Particle particleCurrent = ParticlesBuffer[particleIndex];
-    float2 origin = particleCurrent.m_origin;
+    Particle particleCurrent = ParticlesBuffer[particleIndex];    
+    
     if (particleCurrent.alive == 1) {
 
         float timeAlive = _Time - particleCurrent.m_timeAlive;
         int sub = particleCurrent.subdivided;
         float2 direction = particleCurrent.m_direction;
-        float test = particleCurrent.m_origin.x;
+               
+        float len = speed * timeAlive;
+        float2 origin = particleCurrent.m_origin;
+        float2 pos = origin + direction * len;
+
+        //float distanceOrigin = particleCurrent.m_angle;
+        //float arcDistance = distanceZero + distanceOrigin * len;        
+
+        //if (arcDistance > size && distanceOrigin > _MinAngle) {
+        //   
+        //    int angleRecur = (angleRemain(distanceOrigin / 3.));
+        //    int angleRePrev = (angleRemain(distanceOrigin));
+
+        //    int indexNeiR = angleRecur + sub;
+        //    int indexNeiL = indexNeiR + 1;
+        //    sub += 1;
+
+
+        //    int childRsub = (3 - 1) * (angleRecur * 2) + indexNeiR + angleRePrev;
+        //    int childLsub = ((3 - angleRecur) * 2) + childRsub;
+
+        ///*    int neighbour = 0;
+        //    int neighbourTwo = 0;
+        //    neighbour = particleIndex + sub + 1;
+        //    neighbourTwo = neighbour + 1;*/
+        //    Particle particleNeighborLeft = ParticlesBuffer[indexNeiL + idG.x * 32];
+        //    Particle particleNeighborRight = ParticlesBuffer[indexNeiR + idG.x * 32];
+
+        //    particleNeighborLeft.subdivided = childLsub;
+        //    particleNeighborRight.subdivided = childRsub;
        
-        float2 pos = origin + speed * direction * timeAlive ;
-        float arcDistance = distanceZero + 0.7853982 * speed * timeAlive;
-        
+        //   
+        //    /*if (particleIndex % 64 == 0) {
+        //        neighbour = particleIndex + 1;
+        //        neighbourTwo = particleIndex + 32;
+        //    }
+        //    else {
 
-        if (arcDistance > size && sub == 0) {
-            int neighbour = 0;
-            int neighbourTwo = 0;
-            if (particleIndex % 64 == 0) {
-                neighbour = particleIndex + 1;
-                neighbourTwo = particleIndex + 32;
-            }
-            else {
+        //        neighbour = particleIndex + max(1, particleIndex % 32);
+        //        neighbourTwo = neighbour + 1;
+        //    }*/
+        //   
+        //    if (particleNeighborRight.alive == 0) {
 
-                neighbour = particleIndex + min(1, particleIndex % 32);
-                neighbourTwo = neighbour + 1;
-            }
-           
-            Particle particleNeighborRight = ParticlesBuffer[neighbour];
-            Particle particleNeighborRightTwo = ParticlesBuffer[neighbourTwo];
-            if (particleNeighborRight.alive == 0 && particleNeighborRightTwo.alive == 0) {
+        //        float dispersionAngle = distanceOrigin / 3.;
+        //        dispersionAngle = clamp(dispersionAngle, .01, .99);
+        //        float degr = dispersionAngle + (PI / 2.);
+        //        float coss = cos(degr);
+        //        float sinss = sin(degr);
+        //        float2 rotation = float2(coss, sinss);
 
-                float dispersionAngle = particleCurrent.m_angle / 3.;
-                float coss = cos(dispersionAngle);
-                float sinss = sin(dispersionAngle);
-                float2 rotation = float2(coss, sinss);
+        //        float newX = direction.x * rotation.x - direction.y * rotation.y;
+        //        float newY = direction.x * rotation.y + direction.y * rotation.x;
+        //       
+        //        float newX2 = direction.x * rotation.x + direction.y * rotation.y;
+        //        float newY2 = direction.x * -rotation.y + direction.y * rotation.x;
 
-                float newX = direction.x * rotation.y - direction.y * rotation.x;
-                float newY = direction.x * rotation.x + direction.y * rotation.y;
+        //        float distArc = arcDistance / 3.;
+        //        float2 newPosLeft = float2(newX, newY) * distArc;
+        //        float2 newPosRight = float2(newX2, newY2) * distArc;
+        //       
+        //        particleNeighborLeft.m_origin = pos + newPosLeft;
+        //        particleNeighborRight.m_origin = pos + newPosRight;
 
-                float distArc = arcDistance / 3.;
-                float2 newPosLeft = float2(newX, newY);
+        //        particleNeighborLeft.m_timeAlive = _Time;
+        //        particleNeighborRight.m_timeAlive = _Time;
 
-                /*float cossR = cos(-dispersionAngle);
-                float sinssR = sin(-dispersionAngle);
-                float2 rotationRight = float2(cossR, sinssR);*/
+        //        particleNeighborLeft.m_angle = dispersionAngle;
+        //        particleNeighborRight.m_angle = dispersionAngle;
 
-                /*float newRotationXLeft = direction.x * rotation.x - direction.y * rotation.y;
-                float newRotationYLeft = direction.x * rotation.y + direction.y * rotation.x;
-
-                float newRotationX = direction.x * rotationRight.x - direction.y * rotationRight.y;
-                float newRotationY = direction.x * rotationRight.y + direction.y * rotationRight.x;*/
-
-
-                particleNeighborRight.m_origin = pos + newPosLeft * distArc;
-                particleNeighborRightTwo.m_origin = pos + newPosLeft * -distArc;
-
-                particleNeighborRight.m_timeAlive = _Time;
-                particleNeighborRightTwo.m_timeAlive = _Time;
-
-                particleNeighborRight.m_angle = dispersionAngle;
-                particleNeighborRightTwo.m_angle = dispersionAngle;
-
-                particleNeighborRight.alive = 1;
-                particleNeighborRightTwo.alive = 1;
+        //        particleNeighborLeft.alive = 1;
+        //        particleNeighborRight.alive = 1;
 
 
-                particleNeighborRight.m_direction    = normalize(particleNeighborRight.m_origin - float2(256., 256.));
-                particleNeighborRightTwo.m_direction = normalize(particleNeighborRightTwo.m_origin - float2(256., 256.));
+        //        float cossDir = cos(dispersionAngle);
+        //        float sinssDir = sin(dispersionAngle);
+        //        float2 rotationDir = float2(cossDir, sinssDir);
 
-                ParticlesBuffer[particleIndex].subdivided = 1;
+        //        float dirX = rotationDir.x * direction.x - rotationDir.y * direction.y;
+        //        float dirY = rotationDir.y * direction.x + rotationDir.x * direction.y;
 
-                ParticlesBuffer[neighbour] = particleNeighborRight;
-                ParticlesBuffer[neighbourTwo] = particleNeighborRightTwo;
-            }  
-        }
-        pos.x = mod(pos.x, 513.);
-        pos.y = mod(pos.y, 513.);
-      
-        Result[pos] = float4(1, 1, 1, 1);
+        //        float dirX2 = rotationDir.x * direction.x + rotationDir.y * direction.y; 
+        //        float dirY2 = rotationDir.y * -direction.x + rotationDir.x * direction.y;
+
+        //        particleNeighborLeft.m_direction    = float2(dirX, dirY);
+        //        particleNeighborRight.m_direction   = float2(dirX2, dirY2);
+
+        //        ParticlesBuffer[particleIndex].m_angle = dispersionAngle;
+        //        ParticlesBuffer[particleIndex].subdivided = sub;
+
+        //        ParticlesBuffer[indexNeiL + idG.x * 32] = particleNeighborLeft;
+        //        ParticlesBuffer[indexNeiR + idG.x * 32] = particleNeighborRight;
+
+        //    }  
+        //}
+        int boundaries = maxDivisions;
+        pos.x = mod(pos.x, boundaries);
+        pos.y = mod(pos.y, boundaries);  
+
+        float amplitude = size;
+        Result[floor(pos)] = amplitude;
     }  
     
 }

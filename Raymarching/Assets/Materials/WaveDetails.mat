@@ -7,14 +7,14 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: TestingPasses
+  m_Name: WaveDetails
   m_Shader: {fileID: 4800000, guid: 1ab4c9d566dea384ca3a5ece3cf72b6b, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 1999
+  m_CustomRenderQueue: 2000
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -34,21 +34,37 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - DRAG_MULT: 0.144
-    - Depth: 0.6
-    - Frequency: 1.898
-    - Iterations: 36
-    - Rand: 217.06
-    - Speed: 0.91
-    - Time: 1.084
-    - Weight: 0.687
+    - Amplitude: 1
+    - DRAG_MULT: 0.344
+    - DRAG_MULTWave: 0.602
+    - Denom: 70.9
+    - DenomWave: -6
+    - Depth: 0.26
+    - DepthWave: 35.5
+    - Detail: 262
+    - DetailIter: 10
+    - DetailWave: 0
+    - Frequency: 144
+    - FrequencyAdd: 100
+    - FrequencyAddWave: 1.2
+    - FrequencyWave: 0.6
+    - Iterations: 6
+    - IterationsWave: 16
+    - Rand: 4.27
+    - ScrollSpeed: 28.3
+    - ScrollSpeedWave: 0
+    - Speed: 1.07
+    - SpeedWave: 1.15
+    - Time: 1.104
+    - Weight: 15.5
+    - WeightWave: 0.836
     - _Amplitude: 0
     - _BlurSize: 1
     - _Offset: 0
-    - _Power: 4
+    - _Power: 1
     - _Samples: 30
     - _Size: 1
-    - _Smooth: 1.54
+    - _Smooth: 0.2
     m_Colors:
     - _ColorOne: {r: 0, g: 0, b: 0, a: 1}
     - _ColorTwo: {r: 0, g: 0, b: 0, a: 1}
