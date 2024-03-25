@@ -30,11 +30,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - HW: 128
-    - _Amlpitude: 0.21
-    - _BlurSize: 10
+    - HW: 256
+    - _Amlpitude: 1
+    - _BlurSize: 40
     - _Size: 1
-    - _WaveSize: 2.27
+    - _WaveSize: 1
     m_Colors:
     - _MainColor: {r: 0, g: 0, b: 0, a: 1}
     - _SecColor: {r: 1, g: 1, b: 1, a: 1}

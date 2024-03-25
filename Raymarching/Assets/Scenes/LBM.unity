@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18155693, g: 0.22336382, b: 0.28515953, a: 1}
+  m_IndirectSpecularColor: {r: 0.1838827, g: 0.22893815, b: 0.30256915, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -411,14 +411,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 240030217}
-  m_LocalRotation: {x: 0.13799435, y: 0.5023835, z: -0.08159336, w: 0.8496535}
+  m_LocalRotation: {x: 0.0921385, y: 0.90100163, z: -0.23553313, w: 0.35246393}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 18.45, y: 61.19, z: 0}
+  m_LocalEulerAnglesHint: {x: 29.3, y: 137.27, z: 0}
 --- !u!114 &240030220
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -665,14 +665,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1026925005}
-  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -33.2, y: 39.5, z: 17.7}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 26.7, y: 28.8, z: 51.2}
   m_LocalScale: {x: 50, y: 50, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 7
-  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &1026925008
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -693,7 +693,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1253bf25ed2f49c44b1769308960b1da, type: 2}
+  - {fileID: 2100000, guid: 9d0e0fb8ebdf123498f7a1be923404a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -896,32 +896,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ParticleWavesCompute: {fileID: 7200000, guid: 4211ea1d73884714c98ffed47e42454b,
     type: 3}
-  WavesShader: {fileID: 2100000, guid: 16c844963d1d1974c8646ef44fad5b9e, type: 2}
-  WavesShaderPass2: {fileID: 2100000, guid: c62b2c0ff46502840884d840e36bea44, type: 2}
+  HorizontalBlur: {fileID: 2100000, guid: 16c844963d1d1974c8646ef44fad5b9e, type: 2}
   BlurV: {fileID: 2100000, guid: 9d0e0fb8ebdf123498f7a1be923404a0, type: 2}
   Antialias: {fileID: 2100000, guid: 1253bf25ed2f49c44b1769308960b1da, type: 2}
   HeightMapShader: {fileID: 2100000, guid: 93bf1a08f01c20b46bc59df242b54e42, type: 2}
+  directionTest: 1
   speeds:
-  - 5
-  - 15
-  - 25
   - 65
+  - 50
+  - 45
+  - 70
   amps:
-  - 0.2
   - 1
-  - 0.6
-  - 0.45
-  bounds: c80000005e0100002701000026020000
-  particles: 80000000400000008000000000010000
-  timestep: 3
+  - 0.12
+  - 0.12
+  - 0.12
+  bounds: 6c0100009c01000026020000c8020000
+  particles: 80000000800000008000000080000000
+  timestep: 1
   outputTexturesArray: []
-  DetailTexture: {fileID: 0}
   WaveTexture: {fileID: 0}
   Deviation: {fileID: 0}
   Amplitude: {fileID: 0}
-  Alias: {fileID: 0}
-  HeightMap: {fileID: 0}
-  _TextureSize: 128
+  StackedTex: {fileID: 0}
+  _TextureSize: 256
   threadGroups: 0
   al: 0
   alT: 0

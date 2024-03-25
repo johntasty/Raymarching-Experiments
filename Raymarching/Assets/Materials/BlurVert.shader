@@ -55,7 +55,7 @@ Shader "Unlit/FluidShader"
             float4 _MainColor;
             float4 _SecColor;
             float Alias;
-            
+            #define MOD2 float2(4.438975,3.972973)
             ENDHLSL
 
         Pass
@@ -79,29 +79,25 @@ Shader "Unlit/FluidShader"
                 return o;
             }
 
-           
+            float Hash(float2 p)
+               {
+                // https://www.shadertoy.com/view/4djSRW - Dave Hoskins
+                float2 p2 = frac(p * MOD2);
+                p2 += dot(p2.yx, p2.xy + 19.19);
+                return frac(p2.x * p2.y);
+                //return fract(sin(n)*43758.5453);
+            }
             half4 frag(v2f i) : SV_Target
             {
-                float pixel = _MainTex_TexelSize.x;
-                float filterStep = pixel / Alias;
-                float2 offset = float2(filterStep, 0.);
-               
+                               
                 float4 col1 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);                
                 float4 col2 = SAMPLE_TEXTURE2D(_SecondTex, sampler_SecondTex, i.uv);
                 float4 col3 = SAMPLE_TEXTURE2D(_ThirdTex, sampler_ThirdTex, i.uv);
                 float4 col4 = SAMPLE_TEXTURE2D(_FourthTex, sampler_FourthTex, i.uv);
-               /* for (int y = 0; y <= (int)Alias; y++)
-                {                    
-                    float4 color00 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv - (offset.xx * y));
-                    float4 color01 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv - (offset.yx * y));
-                    float4 color12 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv - (offset * y));
-
-                    colBlend += color00;
-                    colBlend += color01;
-                    colBlend += color12;
-                }*/
-                
-                return col1 + col2 + col3 + col4;//float4(colBlend.xyz / ((Alias + 1) * (Alias + 1)), 1.);
+              
+                float4 col = col1 + col2 + col3 + col4;
+              
+                return col;
             }
 
                 ENDHLSL

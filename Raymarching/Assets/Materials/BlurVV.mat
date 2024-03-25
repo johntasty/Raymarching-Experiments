@@ -30,12 +30,12 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - HW: 128
+    - HW: 256
     - _Amplitude: 0
-    - _Base: 0.05
-    - _BlurSize: 12
+    - _Base: 0
+    - _BlurSize: 40
     - _Power: 0.4
-    - dxScale: 2.9
-    - dyScale: 3.9
+    - dxScale: 0
+    - dyScale: 0
     m_Colors: []
   m_BuildTextureStacks: []

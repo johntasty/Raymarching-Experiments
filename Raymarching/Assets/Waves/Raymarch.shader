@@ -156,7 +156,7 @@ Shader "Unlit/RayMarch"
             h2 *= (_WaterLevel + 1.);*/
 
             float sum = (h2 ) * HEIGHT_FACTOR ;
-            return sum - .01;
+            return sum ;
         }
        
         float3 _GetNormalH(float3 pos, float dis)
@@ -281,7 +281,7 @@ Shader "Unlit/RayMarch"
             //depth
             float atten = max(1.0 - dist * 0.001, 0.0);
             color += _WaterColor * (pos.y - _ColorHeightStart);
-            color += h2 * _SunSpec;
+            //color += h2 * _SunSpec;
             return  color;
         }
        

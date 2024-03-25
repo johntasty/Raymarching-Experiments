@@ -5,12 +5,13 @@ using UnityEngine.Rendering;
 public class ParticleWaves : MonoBehaviour
 {
     public ComputeShader ParticleWavesCompute;
-    public Material WavesShader;
-    public Material WavesShaderPass2;
+    public Material HorizontalBlur;
     public Material BlurV;
     public Material Antialias;
     //public Material[] TestMats = new Material[4];
     public Material HeightMapShader;
+
+    public int directionTest;
 
     public float[] speeds = new float[4];
     public float[] amps = new float[4];
@@ -22,13 +23,11 @@ public class ParticleWaves : MonoBehaviour
     public RenderTexture[] outputTexturesArray;
     ComputeBuffer[] bufferArray;
 
-    public RenderTexture DetailTexture;
     public RenderTexture WaveTexture;
     public RenderTexture Deviation;
     public RenderTexture Amplitude;
-    public RenderTexture Alias;
-   
-    public RenderTexture HeightMap;
+    public RenderTexture StackedTex;
+
 
     //ComputeBuffer bufferTest;
     int kernelHandle;
@@ -61,7 +60,7 @@ public class ParticleWaves : MonoBehaviour
     public bool _Playing = true;
 
     RenderBuffer[] _mrt;
-    // Start is called before the first frame update
+//TODO remap negative values to positive in direction
     void GenerateTextures()
     {
         outputTexturesArray = new RenderTexture[4];
@@ -80,15 +79,15 @@ public class ParticleWaves : MonoBehaviour
         for (int x = 0; x < 4; x++)
         {
             Particle[] ParticleData = new Particle[particles[x]];
-            Vector2 spawnRange = new Vector2(25f, 25f);
+            Vector2 spawnRange = new Vector2(128, 128);
             for (int i = 0; i < particles[x]; i++)
             {
                 Particle initial = new Particle();
-                float radians = 2 * Mathf.PI / 64f * (i % 64);
+                float radians = 2 * Mathf.PI / 64f * (i % 64f);
                 Vector2 radial = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
-                Vector2 _spawn = spawnRange + radial * Random.Range(35, _TextureSize / 2);
+                Vector2 _spawn = spawnRange + radial * Random.Range(25f, 100f);
 
-                initial.m_direction = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
+                initial.m_direction =  new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f));
                 initial.m_origin = _spawn;
                 initial.m_angle = radians;
                 initial.subdivided = 0;
@@ -115,7 +114,7 @@ public class ParticleWaves : MonoBehaviour
        
         kernelHandleClear = ParticleWavesCompute.FindKernel("CSClear");
         ParticleWavesCompute.SetFloat("_Time", alT);
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < directionTest; i++)
         {
             int threads = particles[i] / 64;
             ParticleWavesCompute.SetTexture(kernelHandle, "Result", outputTexturesArray[i]);
@@ -133,6 +132,23 @@ public class ParticleWaves : MonoBehaviour
         }
 
     }
+    void GenPostProcessTex()
+    {       
+        WaveTexture = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
+        Deviation = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGBFloat);
+        Amplitude = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGBFloat);
+        StackedTex = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
+
+        WaveTexture.wrapMode = TextureWrapMode.Repeat;
+        Deviation.wrapMode = TextureWrapMode.Repeat;
+        Amplitude.wrapMode = TextureWrapMode.Repeat;
+        StackedTex.wrapMode = TextureWrapMode.Repeat;
+
+        Deviation.Create();
+        Amplitude.Create();
+        WaveTexture.Create();
+        StackedTex.Create();
+    }
     void Start()
     {
         
@@ -140,111 +156,36 @@ public class ParticleWaves : MonoBehaviour
         GenerateData();
         GenerateBuffers();
         ComputeDispatch();
-        /*     
-        DetailTexture = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
-        WaveTexture = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
-        Deviation = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
-        Amplitude = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
-        Alias = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
 
-        HeightMap = new RenderTexture(_TextureSize, _TextureSize, 0, RenderTextureFormat.ARGB32);
-
-        DetailTexture.enableRandomWrite = true;
-
-        DetailTexture.wrapMode = TextureWrapMode.Repeat;
-        HeightMap.wrapMode = TextureWrapMode.Repeat;
-        WaveTexture.wrapMode = TextureWrapMode.Repeat;
-        Deviation.wrapMode = TextureWrapMode.Repeat;
-        Amplitude.wrapMode = TextureWrapMode.Repeat;
-        Alias.wrapMode = TextureWrapMode.Repeat;
-
-        outputTexture.Create();
-        DetailTexture.Create();
-        Alias.Create();
-
-        Deviation.Create();
-        Amplitude.Create();
-
-        WaveTexture.Create();
-        HeightMap.Create();
-        */
-
-
-
-
-        //for (int y = 0; y < partNumCircle; y++)
-        //{
-        //    float YY = 0;
-        //    Vector2 spawnRange = new Vector2(512, 512);
-        //    for (int i = 0; i < maxParts; i++)
-        //    {
-        //        Particle initial = new Particle();
-
-        //        initial.m_origin = start;
-        //        initial.subdivided = 0;
-        //        initial.m_direction = new Vector2(0, 0);
-        //        initial.alive = 0;
-        //        _ParticleData[i + y * maxParts] = initial;
-        //        //if (i % 512 == 0 && i != 0) YY++;
-        //        if (i % 32 == 0)
-        //        {
-        //            float radians = 2 * Mathf.PI / diviorAngle * YY;
-
-        //            Vector2 radial = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
-        //            Vector2 _spawn = spawnRange + radial * radius;
-        //            initial.m_origin = _spawn;
-
-        //            Vector2 direction = _spawn - spawnRange;
-
-        //            initial.m_direction = direction.normalized;
-        //            initial.m_angle = radiansStart;
-        //            initial.alive = 1;
-        //            initial.subdivided = 0;
-        //            initial.m_timeAlive = _time;
-        //            _ParticleData[i + y * maxParts] = initial;
-        //            YY++;
-        //        }
-        //    }
-        //    //radius += 4f;
-        //}
-
-
-        //Arc distance at 0
-        //float distanO = radius * radiansStart;
-        //al = distanO;
-
+        GenPostProcessTex();
 
         Antialias.SetTexture("_MainTex", outputTexturesArray[0]);
         Antialias.SetTexture("_SecondTex", outputTexturesArray[1]);
         Antialias.SetTexture("_ThirdTex", outputTexturesArray[2]);
         Antialias.SetTexture("_FourthTex", outputTexturesArray[3]);
 
-        //Antialias.SetTexture("_MainTex", outputTexture);
-        //WavesShader.SetTexture("_MainTex", outputTexture);
-        //WavesShader.SetFloat("HW", (float)_TextureSize);
-        //WavesShaderPass2.SetTexture("_MainTex", DetailTexture);
+        HorizontalBlur.SetTexture("_MainTex", StackedTex);
+        HorizontalBlur.SetFloat("HW", (float)_TextureSize);
+      
+        _mrt = new RenderBuffer[2];
+        _mrt[0] = Deviation.colorBuffer;
+        _mrt[1] = Amplitude.colorBuffer;
 
-        //_mrt = new RenderBuffer[2];
-        //_mrt[0] = Deviation.colorBuffer;
-        //_mrt[1] = Amplitude.colorBuffer;
-       
-        //BlurV.SetTexture("_MainTex", Deviation);
-        //BlurV.SetTexture("_Secondary", Amplitude);
-        //BlurV.SetFloat("HW", (float)_TextureSize);
+        BlurV.SetTexture("_MainTex", Deviation);
+        BlurV.SetTexture("_Secondary", Amplitude);
+        BlurV.SetFloat("HW", (float)_TextureSize);
 
         //HeightMapShader.SetTexture("_NoiseTex", DetailTexture);
-        //HeightMapShader.SetTexture("_MainTex", WaveTexture);
+        HeightMapShader.SetTexture("_MainTex", WaveTexture);
 
     }
     private void OnDisable()
     {
-        //outputTexture.Release();
-        //WaveTexture.Release();
-        //DetailTexture.Release();
-        //HeightMap.Release();
-        //Deviation.Release();
-        //Amplitude.Release();
-        //Alias.Release();
+
+        WaveTexture.Release();       
+        Deviation.Release();
+        Amplitude.Release();
+        StackedTex.Release();
 
         //BlurVertical.Release();
         for (int i = 0; i < 4; i++)
@@ -255,7 +196,7 @@ public class ParticleWaves : MonoBehaviour
         }
         //bufferVelo.Release();
         //bufferVelo.Dispose();
-        //_mrt = null;
+        _mrt = null;
     }
     private void Update()
     {
@@ -263,12 +204,11 @@ public class ParticleWaves : MonoBehaviour
         alT = Time.time * timestep;
        
         ComputeDispatch();
-      
-        //Graphics.Blit(null, DetailTexture, WavesShaderPass2);
-        ////Graphics.Blit(outputTexture, Alias, Antialias);
-        //Graphics.SetRenderTarget(_mrt, Deviation.depthBuffer);
-        //Graphics.Blit(null, WavesShader);
-        //Graphics.Blit(null, WaveTexture, BlurV);
+
+        Graphics.Blit(null, StackedTex, Antialias);
+        Graphics.SetRenderTarget(_mrt, Deviation.depthBuffer);
+        Graphics.Blit(null, HorizontalBlur);
+        Graphics.Blit(null, WaveTexture, BlurV);
     }
 
    

@@ -155,11 +155,14 @@ void CSMain (uint3 id : SV_GroupThreadID, uint3 idG : SV_GroupID)
         //    }  
         //}
         int boundaries = maxDivisions;
+
+       
         pos.x = mod(pos.x, boundaries);
         pos.y = mod(pos.y, boundaries);  
 
         float amplitude = size;
-        Result[floor(pos)] = amplitude;
+
+        Result[floor(pos)] = float4((amplitude *  direction + 1. * .5), amplitude,0);
     }  
     
 }

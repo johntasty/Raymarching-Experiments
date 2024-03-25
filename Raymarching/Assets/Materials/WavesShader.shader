@@ -6,22 +6,11 @@ Shader "Unlit/WavesShader"
         _Mask ("_Mask", 2D) = "white" {}      
         _MainColor("Main Color", Color) = (1,1,1,1)
         _SecColor("Color", Color) = (1,1,1,1)
-        _BlurSize("Blur Size", Float) = 0
+        _BlurSize("Blur Size", Int) = 0
         _Amlpitude("Amlpitude", Float) = 0
         _WaveSize("_WaveSize", Float) = 0
         HW("HW", Float) = 0
-        //DRAG_MULTWave("DRAG_MULT_Wave", Range(0.,1.)) = 0.048
-        //DenomWave("Denom_Wave", Float) = 0.048
-        //Rand("Rand", Float) = 0.048        
-        //DepthWave("Depth_Wave", Range(0.,50.)) = 0.048
-        //DetailWave("Detail_Wave", Range(0.,20.)) = 0.048
-        //FrequencyWave("Frequency_Wave", Range(0.,20.)) = 1.1
-        //FrequencyAddWave("FrequencyAdd_Wave", Range(0.,20.)) = 1.1
-        //WeightWave("Weight_Wave", Range(0.,1.)) = .5
-        //SpeedWave("Speed_Wave", Range(0.,2.)) = .5
-        //ScrollSpeedWave("Scroll Speed_Wave", Range(0.,2.)) = .5
-        //Time("Time_Wave", Range(1.,2.)) = 1.1
-        //IterationsWave("Iterations_Wave", Int) = 16
+       
 
         _Size("Size", Range(0,1)) = 0.
              
@@ -71,25 +60,13 @@ Shader "Unlit/WavesShader"
             float4 _MainColor;
             float4 _SecColor;
 
-            float _BlurSize;
+            int _BlurSize;
             float _Size;
             float _Amlpitude;
             float _WaveSize;
             float HW;
                                   
-            
-            /*float Time;
-            float Rand;
-            float DRAG_MULTWave;
-            float DepthWave;
-            float DenomWave;
-            float DetailWave;
-            float FrequencyWave;
-            float FrequencyAddWave;
-            float SpeedWave;
-            float ScrollSpeedWave;
-            float WeightWave;
-            int IterationsWave;*/
+         
 
             #define MOD2 float2(4.438975,3.972973)
             #define HASHSCALE4 float4(1031, .1030, .0973, .1099)
@@ -151,37 +128,39 @@ Shader "Unlit/WavesShader"
                  f2f o;
                                  
                  float4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
-
+               
                  float4 f123 = float4(tex.z, 0, 0.5 * tex.z, 1);               
                  float4 f45v = float4(0, tex.z, tex.xy);
                  float4 col = float4(0, 0, 0, 1);
                
                  float offset = 1. / HW;
                  float off = 0.;
-                 for (int y = 1; y <= (int)_BlurSize; y++)
+               
+                 for (int y = 1; y <= _BlurSize; y++)
                  {
                      
                      off += offset;
-                     float4 texL = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv + float2(off, 0));
-                     float4 texR = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv + float2(-off, 0));
+                     float4 texL = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv + float2(-off, 0));                    
+                     float4 texR = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv + float2(off, 0));
                     
                      float ampSum = texL.z + texR.z;
                      float ampDif = texL.z - texR.z;
 
                      float3 f = GetFilter(y / float(_BlurSize));
                      f123.x += ampSum * f.x;
-                     //col.x += ampSum * f.x;
-                     f123.y += ampDif * f.y;
-                     //col.y += ampDif * f.y;
+                    
+                     f123.y += ampDif * f.y;                    
                      f123.z += ampSum * f.z;
-                     //col.z += ampSum * f.z;
+                    
                      f45v.x += ampDif * f.x * f.y * 2;
                      f45v.y += ampSum * f.x * f.x;
+                    
+                    
+                     f45v.z += (texL.x + texR.x) * f.x;
+                     f45v.w += (texL.y + texR.y) * f.x;
 
-                     f45v.z += texL.x + texR.x * f.x;
-                     f45v.w += texL.y + texR.y * f.x;
                  }
-                
+                 
                  o.color01 = f123;
                  o.color02 = f45v;
                  return o;

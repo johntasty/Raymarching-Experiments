@@ -58,7 +58,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - HEIGHT_FACTOR: 5
+    - HEIGHT_FACTOR: 1.67
     - LightIntenSity: 5.93
     - TestDist: 0.91
     - _Accuracy: 0.002
@@ -80,14 +80,14 @@ Material:
     - _MaxSteps: 100
     - _Max_Distance: 200
     - _Max_Steps: 65
-    - _Metallic: 0.22
+    - _Metallic: 0.214
     - _OcclusionStrength: 1
     - _PalleteColor: 6
     - _Parallax: 0.005
     - _Radius: 1.16
     - _Reflections: 0.5
     - _RefractPower: 6.87
-    - _Roughness: 1.83
+    - _Roughness: 0
     - _ScatterBrightness: 0.2
     - _ScatteringPower: 7.89
     - _SecondaryBrightness: 1.09
@@ -98,7 +98,7 @@ Material:
     - _Size: 0.01
     - _SizeSphere: 0.31
     - _Smooth: 0.3
-    - _Smoothness: 0.215
+    - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecBrightness: 0.16
     - _SpecBrightness2: -0.84
@@ -127,7 +127,7 @@ Material:
     - averageAmplitude: 0.2
     - baseSpeed: 1
     - diffuseStrength: 8.97
-    - freq: 0.03
+    - freq: 0.04
     - meanFrequency: 0.6
     - numberOfWaves: 16
     - size: 1
