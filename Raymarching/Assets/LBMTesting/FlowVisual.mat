@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Visualize
-  m_Shader: {fileID: 4800000, guid: 8390ab4e95faaac48b9cca761acc1844, type: 3}
+  m_Name: FlowVisual
+  m_Shader: {fileID: 4800000, guid: d233b3949b1d5244a8ca5e27dfbf7e38, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -21,16 +21,12 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _Base:
-        m_Texture: {fileID: 2800000, guid: 0a5f82fa6815d7044a0f014f77a59296, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _FlowMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Foam:
-        m_Texture: {fileID: 2800000, guid: 0a5f82fa6815d7044a0f014f77a59296, type: 3}
-        m_Scale: {x: 3, y: 3}
         m_Offset: {x: 0, y: 0}
     - _HeightMap:
         m_Texture: {fileID: 0}
@@ -41,36 +37,26 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Noise:
-        m_Texture: {fileID: 2800000, guid: b0d02d0fbb99d1b408c1c4db601b16d4, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TerrainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _Tracers:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - ARROW_SHAFT_THICKNESS: 0.0001
-    - ARROW_TILE_SIZE: 0.0019
-    - DDxSize: 0.00193
-    - DDxTile: 2.12
-    - Force: 1
-    - Speed: 1
-    - _FlowSpeed: 2
-    - _FlowTileScale: 7
-    - _FluidDis: 0.16
-    - _FluidVelocity: 0.03
-    - _FluidVelocityY: 0.09
-    - _Force: 0.2
-    - _Glossiness: 0.404
+    - _FlowSpeed: 1
+    - _FlowTileScale: 35
+    - _FluidDis: 35
+    - _FluidVelocity: 0.25
+    - _FluidVelocityY: 0.25
+    - _Force: 35
+    - _Glossiness: 0.5
     - _Metallic: 0
-    - _UJump: 0.067
-    - _VJump: 0.069
-    - _heightTileScale: 0
+    - _UJump: 0.25
+    - _VJump: 0.25
+    - _heightTileScale: 35
     m_Colors:
-    - _Color: {r: 0, g: 0, b: 0, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

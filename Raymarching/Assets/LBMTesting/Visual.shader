@@ -134,6 +134,7 @@ Shader "Custom/Visual"
                     float4 velC = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
                     float colBlend2 = SAMPLE_TEXTURE2D(_TerrainTex, sampler_TerrainTex, i.uv).r * 2.;
                     float4 flow = SAMPLE_TEXTURE2D(_FlowMap, sampler_FlowMap, i.uv) ;
+                    float density = flow.w;
                     float cSpeed = sqrt(flow.x * flow.x + flow.y * flow.y);
                     flow.xy *= _Force;
 
@@ -147,8 +148,6 @@ Shader "Custom/Visual"
                     float4 col1 = SAMPLE_TEXTURE2D(_Base, sampler_Base, gd.xy)  * gd.z;
                     float4 col2 = SAMPLE_TEXTURE2D(_Base, sampler_Base, gd1.xy) * gd1.z;
 
-                                     
-                   
                     float2 off = float2(_FluidVelocity, 0.) * .5;
 
                     float speedR = (SAMPLE_TEXTURE2D(_FlowMap, sampler_FlowMap, i.uv + off).y);
@@ -156,8 +155,8 @@ Shader "Custom/Visual"
                     float speedU = (SAMPLE_TEXTURE2D(_FlowMap, sampler_FlowMap, i.uv + off.yx).x);
                     float speedD = (SAMPLE_TEXTURE2D(_FlowMap, sampler_FlowMap, i.uv - off.yx).x);
                     float col = abs(speedR - speedL - speedU + speedD) * _FluidDis;
-                   
-                    return (col1 + col2) * col;
+                    float3 final = (col1 + col2) * col;
+                    return float4(final, density);
                 }
 
                     ENDHLSL

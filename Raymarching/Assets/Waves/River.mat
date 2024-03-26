@@ -58,7 +58,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - HEIGHT_FACTOR: 1.67
+    - HEIGHT_FACTOR: 1
     - LightIntenSity: 5.93
     - TestDist: 0.91
     - _Accuracy: 0.002
@@ -66,10 +66,10 @@ Material:
     - _BaseBrightness: 0.74
     - _BumpScale: 1.6
     - _ColorClamp: 0.64
-    - _ColorHeightStart: -0.52
+    - _ColorHeightStart: 0.31
     - _Cutoff: 0.5
     - _DepthColorPower: 1.97
-    - _DepthSize: 5.62
+    - _DepthSize: 4.81
     - _EmmisionSize: 12.7
     - _FlowSpeed: 0.6
     - _Fresnel: 8
@@ -80,7 +80,7 @@ Material:
     - _MaxSteps: 100
     - _Max_Distance: 200
     - _Max_Steps: 65
-    - _Metallic: 0.214
+    - _Metallic: 0.24
     - _OcclusionStrength: 1
     - _PalleteColor: 6
     - _Parallax: 0.005
@@ -122,12 +122,12 @@ Material:
     - _TestFloat: 0.5
     - _WaterBrightness: 3.1
     - _WaterColorClamp: 32.05
-    - _WaterLevel: 1
+    - _WaterLevel: 5
     - _WaveLen: 4.3
     - averageAmplitude: 0.2
     - baseSpeed: 1
     - diffuseStrength: 8.97
-    - freq: 0.04
+    - freq: 0.02
     - meanFrequency: 0.6
     - numberOfWaves: 16
     - size: 1

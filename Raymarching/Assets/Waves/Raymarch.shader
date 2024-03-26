@@ -148,15 +148,17 @@ Shader "Unlit/RayMarch"
         float _HeightMap(float3 p)
         {
             float2 uv = (p.xz * freq) + _Offset.xy;
-            //float h = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, uv ).r * _Offset.z;
+            float h = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, uv ).w * _Offset.z;
             float h2 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv ).r * _Offset.w;
 
-            /*h2 -= 1.;
-            h2 /= 5.;
-            h2 *= (_WaterLevel + 1.);*/
+            //h -= 1.001;
+            // h *= (5.);
+            // h = h / _WaterLevel;
+            //h /= 5.;
+            
 
-            float sum = (h2 ) * HEIGHT_FACTOR ;
-            return sum ;
+            float sum = (h + (h2 * h)) * HEIGHT_FACTOR ;
+            return sum - .1;
         }
        
         float3 _GetNormalH(float3 pos, float dis)
@@ -281,7 +283,7 @@ Shader "Unlit/RayMarch"
             //depth
             float atten = max(1.0 - dist * 0.001, 0.0);
             color += _WaterColor * (pos.y - _ColorHeightStart);
-            //color += h2 * _SunSpec;
+            color += h2 * _SunSpec;
             return  color;
         }
        
@@ -389,6 +391,8 @@ Shader "Unlit/RayMarch"
                 Tags { "LightMode" = "UniversalForward" }
 
                 ZWrite On
+                Cull Off
+                ZTest Always
                 //Blend SrcAlpha OneMinusSrcAlpha
                 HLSLPROGRAM
                 // Signal this shader requires a compute buffer

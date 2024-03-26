@@ -229,6 +229,7 @@ public class LBMTest : MonoBehaviour
         LBMCompute.SetFloat("_Height", amplitude / _MaxHeight);
         LBMCompute.SetFloat("_VelocityS", _VelocityS);
         LBMCompute.SetBool("_Bounce", _Bounce);
+
     }
 }
 

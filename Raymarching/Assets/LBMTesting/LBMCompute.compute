@@ -120,7 +120,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     // Access the grid square in the buffer
     int index = id.y * width + id.x;   
-    SetEquilibrium(index, 0, 0., 1.);
+    SetEquilibrium(index, 0, 0., 0.01);
     float4 color = InputTexture[id.xy];
     float normalizedGrayscale = color.r;
     /*if (is_wall(normalizedGrayscale, id.xy)) {
@@ -282,11 +282,12 @@ void Stream(uint3 id : SV_DispatchThreadID)
     float3 colorVel;
     if (is_wall(normalizedGrayscale, id.xy)) {
         colorVel.xyz = float3(xVel, yVel, 0);
+       
     }
     else {
         float contrast = 2 * pow(1.2, _Contrast) + .5;
-        float normal_value = sqrt(xVel * xVel + yVel * yVel) + 91. * contrast;
-        normal_value = normal_value / 0.2;
+        float normal_value = norm + 91. * contrast;
+        normal_value = normal_value / .2;
 
         if (normal_value < 0.0) normal_value = 0.0;
         if (normal_value > 1.0) normal_value = 1.0;
@@ -346,8 +347,9 @@ void Stream(uint3 id : SV_DispatchThreadID)
             colorVel.x = 107. * (1. - c) + 223. * c;
             colorVel.y = 77. * c;
             colorVel.z = 77. * c;
+           
         }
-       
+      
     }
 
     float4 res = float4((colorVel.r / 255), (colorVel.g / 255), (colorVel.b / 255), 1.0);

@@ -33,9 +33,9 @@ Material:
     - HW: 256
     - _Amplitude: 0
     - _Base: 0
-    - _BlurSize: 40
-    - _Power: 0.4
-    - dxScale: 0
-    - dyScale: 0
+    - _BlurSize: 42
+    - _Power: 0.2
+    - dxScale: 0.03
+    - dyScale: -0.35
     m_Colors: []
   m_BuildTextureStacks: []
