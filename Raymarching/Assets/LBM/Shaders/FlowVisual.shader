@@ -22,7 +22,7 @@ Shader "Custom/Visual"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-            #include "../Materials/Utils.hlsl"
+            #include "../Shaders/Utils.hlsl"
 
             struct appdata
             {

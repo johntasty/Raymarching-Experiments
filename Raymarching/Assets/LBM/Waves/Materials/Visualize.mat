@@ -62,11 +62,11 @@ Material:
     - Speed: 1
     - _FlowSpeed: 2
     - _FlowTileScale: 7
-    - _FluidDis: 0.16
-    - _FluidVelocity: 0.03
-    - _FluidVelocityY: 0.09
+    - _FluidDis: 0.18
+    - _FluidVelocity: 0.0087
+    - _FluidVelocityY: -0.32
     - _Force: 0.2
-    - _Glossiness: 0.404
+    - _Glossiness: 0
     - _Metallic: 0
     - _UJump: 0.067
     - _VJump: 0.069

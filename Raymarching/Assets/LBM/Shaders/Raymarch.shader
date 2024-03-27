@@ -149,7 +149,7 @@ Shader "Unlit/RayMarch"
         {
             float2 uv = (p.xz * freq) + _Offset.xy;
             float h = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, uv ).w * _Offset.z;
-            float h2 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv ).r * _Offset.w;
+            float h2 = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv * _MainTex_ST.xy).r * _Offset.w;
 
             //h -= 1.001;
             // h *= (5.);
@@ -166,7 +166,7 @@ Shader "Unlit/RayMarch"
             const float eps = 0.005 * dis;
             const float3 h = float3(eps, 0,0);
             return normalize(float3(_HeightMap(pos - h.xyz) - _HeightMap(pos + h.xyz),
-                2. * eps,
+                3. * eps,
                 _HeightMap(pos - h.yzx) - _HeightMap(pos + h.yzx)));
 
         }

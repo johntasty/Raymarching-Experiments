@@ -34,7 +34,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 4, y: 4}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
@@ -43,7 +43,7 @@ Material:
     - _NoiseTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 0, y: 0}
-        m_Offset: {x: 0.02, y: 0}
+        m_Offset: {x: 0.01, y: 0}
     - _OcclusionMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -59,17 +59,17 @@ Material:
     m_Ints: []
     m_Floats:
     - HEIGHT_FACTOR: 1
-    - LightIntenSity: 5.93
+    - LightIntenSity: 6.54
     - TestDist: 0.91
     - _Accuracy: 0.002
     - _AmbientStrengh: 5
-    - _BaseBrightness: 0.74
+    - _BaseBrightness: 4.1
     - _BumpScale: 1.6
     - _ColorClamp: 0.64
-    - _ColorHeightStart: 0.31
+    - _ColorHeightStart: -0.7
     - _Cutoff: 0.5
     - _DepthColorPower: 1.97
-    - _DepthSize: 4.81
+    - _DepthSize: 5
     - _EmmisionSize: 12.7
     - _FlowSpeed: 0.6
     - _Fresnel: 8
@@ -79,8 +79,8 @@ Material:
     - _MaxDistance: 65
     - _MaxSteps: 100
     - _Max_Distance: 200
-    - _Max_Steps: 65
-    - _Metallic: 0.24
+    - _Max_Steps: 75
+    - _Metallic: 0.33
     - _OcclusionStrength: 1
     - _PalleteColor: 6
     - _Parallax: 0.005
@@ -88,9 +88,9 @@ Material:
     - _Reflections: 0.5
     - _RefractPower: 6.87
     - _Roughness: 0
-    - _ScatterBrightness: 0.2
+    - _ScatterBrightness: 0.25
     - _ScatteringPower: 7.89
-    - _SecondaryBrightness: 1.09
+    - _SecondaryBrightness: 1.48
     - _ShadowIntensity: 5
     - _ShadowMax: 100
     - _ShadowMin: 0.1
@@ -118,16 +118,16 @@ Material:
     - _SpecullarBrightness: 3.3
     - _SphereSmooth: 0.7
     - _StrenghLight: 0.28
-    - _SunSpec: 3
+    - _SunSpec: 29.07
     - _TestFloat: 0.5
-    - _WaterBrightness: 3.1
+    - _WaterBrightness: 4.36
     - _WaterColorClamp: 32.05
     - _WaterLevel: 5
     - _WaveLen: 4.3
     - averageAmplitude: 0.2
     - baseSpeed: 1
     - diffuseStrength: 8.97
-    - freq: 0.02
+    - freq: 0.01
     - meanFrequency: 0.6
     - numberOfWaves: 16
     - size: 1
@@ -136,7 +136,7 @@ Material:
     - _Base: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColor: {r: 0.8867924, g: 0.5367108, b: 0.10457456, a: 1}
     - _BaseColor2: {r: 0.38968495, g: 0.5098338, b: 0.5943396, a: 1}
-    - _Bounds: {r: 25, g: 5, b: 25, a: 0}
+    - _Bounds: {r: 50, g: 5, b: 50, a: 6.1}
     - _BoundsDifuse: {r: 0, g: 0, b: 0, a: 1}
     - _BoundsTest: {r: 0, g: 0, b: 0, a: 1}
     - _DepthColor: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 1}

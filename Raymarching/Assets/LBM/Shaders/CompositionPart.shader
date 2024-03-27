@@ -1,4 +1,4 @@
-Shader "Unlit/FluidShader"
+Shader "Unlit/CompositionPart"
 {
     Properties
     {

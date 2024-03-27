@@ -140,7 +140,8 @@ Shader "Unlit/VerticalBlur"
                 dir = dir * 2. - 1.;
                 deviation.x *= (dir.x);
                 deviation.y *= (dir.y);
-                
+                deviation.x *= dxScale;
+                deviation.y *= dyScale;
                
                 float coll = (-deviation.x - deviation.y + deviation.z);
                 return  (coll * _Power) + _Base;

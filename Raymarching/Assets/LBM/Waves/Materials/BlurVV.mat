@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: HorizontalBlur
-  m_Shader: {fileID: 4800000, guid: 74eeff55566d58444940d1aacb4c1866, type: 3}
+  m_Name: BlurVV
+  m_Shader: {fileID: 4800000, guid: 7e9ae64c4392507409d69e1bc21b698d, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -24,9 +24,18 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Secondary:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BlurSize: 0
-    - _Samples: 10
+    - HW: 256
+    - _Amplitude: 0
+    - _Base: 0
+    - _BlurSize: 40
+    - _Power: 0.5
+    - dxScale: 0.64
+    - dyScale: 0
     m_Colors: []
   m_BuildTextureStacks: []

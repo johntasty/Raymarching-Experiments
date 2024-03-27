@@ -32,7 +32,7 @@ Material:
     m_Floats:
     - HW: 256
     - _Amlpitude: 1
-    - _BlurSize: 20
+    - _BlurSize: 12
     - _Size: 1
     - _WaveSize: 1
     m_Colors:
